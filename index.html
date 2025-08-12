@@ -1,465 +1,698 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gerenciador de Cupons — Seja Fibra</title>
-
-  <!-- Icon / Logo (usar os mesmos do site) -->
-  <link rel="icon" href="https://sejafibra.net/wp-content/uploads/2023/06/logonovofibra.png" />
-
-  <!-- Estilo simples inspirado no site existente -->
-  <style>
-    :root{
-      --primary:#ff6600; /* laranja padrão */
-      --accent:#0056a6;  /* azul para contraste */
-      --bg:#f6f7fb;
-      --card:#ffffff;
-      --muted:#6b7280;
-      --success:#16a34a;
-      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:#0f172a}
-    header{background:linear-gradient(90deg,var(--primary),#ff8a33);padding:12px 20px;color:white;display:flex;align-items:center;gap:16px}
-    header img{height:44px}
-    header h1{font-size:18px;margin:0}
-    .container{max-width:1100px;margin:22px auto;padding:16px}
-    .card{background:var(--card);border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,0.06);margin-bottom:16px}
-    .grid{display:grid;gap:12px}
-    .two{grid-template-columns:1fr 320px}
-    .three{grid-template-columns:1fr 1fr 1fr}
-    label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
-    input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;background:#fff}
-    button{background:var(--primary);color:white;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
-    .btn-danger{background:#e02424}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid #eef2f6;text-align:left}
-    .muted{color:var(--muted);font-size:13px}
-    .top-actions{display:flex;gap:8px;align-items:center}
-    .nav{display:flex;gap:8px}
-    .nav button{background:transparent;color:white;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12)}
-    .hidden{display:none}
-    .small{font-size:13px;padding:6px 8px}
-    footer{max-width:1100px;margin:0 auto;padding:10px;color:var(--muted);font-size:13px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Cupons</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+        .auth-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding-top: 50px;
+        }
+        .main-container {
+            padding: 20px;
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+        .logout-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <img src="https://sejafibra.net/wp-content/uploads/2023/06/logonovofibra.png" alt="Seja Fibra"/>
-    <h1>Gerenciador de Cupons — Seja Fibra</h1>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-      <div id="userEmail" class="muted"></div>
-      <button id="btnSignOut" class="small hidden">Sair</button>
-    </div>
-  </header>
-
-  <div class="container">
-
-    <!-- Login card -->
-    <div id="cardLogin" class="card">
-      <h2>Login</h2>
-      <p class="muted">Faça login com a conta autorizada (e-mail e senha).</p>
-      <div style="max-width:420px">
-        <label for="email">Email</label>
-        <input id="email" type="email" autocomplete="username" />
-        <label for="password">Senha</label>
-        <input id="password" type="password" autocomplete="current-password" />
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button id="btnLogin">Entrar</button>
-          <button id="btnDemo" class="small">Login demo (não faz Auth)</button>
-        </div>
-        <p id="loginMsg" class="muted" style="margin-top:10px"></p>
-      </div>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="dashboard" class="hidden">
-      <div class="card">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div class="nav">
-            <button class="small" data-view="cupons">Cupons</button>
-            <button class="small" data-view="influencers">Influencers</button>
-            <button class="small" data-view="registro">Registrar Uso</button>
-            <button class="small" data-view="relatorios">Relatórios</button>
-          </div>
-          <div style="margin-left:auto;display:flex;gap:8px">
-            <button id="btnExportAll" class="small">Exportar tudo (XLS)</button>
-            <button id="btnSignOut2" class="small btn-danger">Sair</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Cupons -->
-      <div id="view-cupons" class="card view">
-        <h3>Gerenciar Cupons</h3>
-        <div class="grid two">
-          <div>
-            <label>Selecionar Influencer</label>
-            <select id="selectInfluencerForCoupon"></select>
-            <label>Código do Cupom</label>
-            <input id="couponCode" placeholder="ex: jessikinha15" />
-            <label>Valor pago por uso (R$)</label>
-            <input id="couponValue" type="number" step="0.01" value="2.50" />
-            <div style="margin-top:10px">
-              <button id="btnAddCoupon">Adicionar / Atualizar Cupom</button>
+    <!-- Autenticação -->
+    <div id="auth-container" class="auth-container">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-center">Login</h5>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" placeholder="seu@email.com">
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Senha</label>
+                    <input type="password" class="form-control" id="password" placeholder="Sua senha">
+                </div>
+                <button id="login-btn" class="btn btn-primary w-100">Entrar</button>
+                <div id="login-message" class="mt-3 text-center text-danger"></div>
             </div>
-            <p class="muted" style="margin-top:8px">Obs: se o cupom já existir, ele será atualizado.</p>
-          </div>
-          <div>
-            <h4>Cupons cadastrados</h4>
-            <table id="tableCoupons"><thead><tr><th>Cupom</th><th>Influencer</th><th>Valor (R$)</th><th></th></tr></thead><tbody></tbody></table>
-          </div>
         </div>
-      </div>
-
-      <!-- Influencers -->
-      <div id="view-influencers" class="card view hidden">
-        <h3>Gerenciar Influencers</h3>
-        <div class="grid two">
-          <div>
-            <label>Nome do Influencer</label>
-            <input id="influencerName" placeholder="Jéssica dos Reis" />
-            <label>Email para referência (opcional)</label>
-            <input id="influencerEmail" placeholder="jessikinha@email.com" />
-            <div style="margin-top:10px">
-              <button id="btnAddInfluencer">Adicionar Influencer</button>
-            </div>
-          </div>
-          <div>
-            <h4>Lista de influencers</h4>
-            <table id="tableInfluencers"><thead><tr><th>Nome</th><th>Email</th><th></th></tr></thead><tbody></tbody></table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Registrar uso -->
-      <div id="view-registro" class="card view hidden">
-        <h3>Registrar Uso de Cupom</h3>
-        <div style="max-width:640px">
-          <label>Nº do contrato</label>
-          <input id="regContrato" placeholder="1234567" />
-          <label>Selecione o cupom</label>
-          <select id="regCupom"></select>
-          <label>Data do uso</label>
-          <input id="regData" type="date" />
-          <div style="margin-top:10px;display:flex;gap:8px">
-            <button id="btnRegisterUse">Registrar Uso</button>
-            <button id="btnRegisterUseQuick" class="small">Registrar Hoje (Rápido)</button>
-          </div>
-          <p class="muted" style="margin-top:8px">Ao registrar, será gravado: data, cupom, influencer, contrato e valor.</p>
-        </div>
-      </div>
-
-      <!-- Relatórios -->
-      <div id="view-relatorios" class="card view hidden">
-        <h3>Relatórios de Comissão</h3>
-        <div class="grid three" style="align-items:end">
-          <div>
-            <label>Filtrar por influencer</label>
-            <select id="filterInfluencer"><option value="">-- Todos --</option></select>
-          </div>
-          <div>
-            <label>Filtrar por cupom</label>
-            <select id="filterCupom"><option value="">-- Todos --</option></select>
-          </div>
-          <div>
-            <label>Período</label>
-            <div style="display:flex;gap:8px"><input id="filterFrom" type="date" /> <input id="filterTo" type="date" /></div>
-          </div>
-        </div>
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <button id="btnRunReport">Gerar relatório</button>
-          <button id="btnExportXLS" class="small">Exportar XLS</button>
-          <button id="btnExportPDF" class="small">Exportar PDF</button>
-        </div>
-        <div style="margin-top:12px">
-          <h4>Resultado</h4>
-          <table id="tableReport"><thead><tr><th>Data</th><th>Contrato</th><th>Cupom</th><th>Influencer</th><th>Valor (R$)</th></tr></thead><tbody></tbody><tfoot><tr><td colspan="4" style="text-align:right">Total</td><td id="reportTotal">R$ 0,00</td></tr></tfoot></table>
-        </div>
-      </div>
-
     </div>
 
-  </div>
+    <!-- Aplicação Principal (visível após login) -->
+    <div id="app-container" class="main-container" style="display: none;">
+        <button id="logout-btn" class="btn btn-danger logout-btn">Sair</button>
+        <h2 class="text-center mb-4">Gerenciamento de Cupons</h2>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="partners-tab" data-bs-toggle="tab" data-bs-target="#partners" type="button" role="tab">Parceiros</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="contracts-tab" data-bs-toggle="tab" data-bs-target="#contracts" type="button" role="tab">Contratos</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab">Relatórios</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="myTabContent">
+            <!-- Aba de Parceiros -->
+            <div class="tab-pane fade show active" id="partners" role="tabpanel">
+                <h4>Cadastro de Parceiros</h4>
+                <form id="partner-form" class="mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="partner-name" class="form-label">Nome do Parceiro</label>
+                            <input type="text" class="form-control" id="partner-name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="coupon-code" class="form-label">Código do Cupom</label>
+                            <input type="text" class="form-control" id="coupon-code" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="discount-percent" class="form-label">% de Desconto</label>
+                            <input type="number" class="form-control" id="discount-percent" min="1" max="100" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="commission-value" class="form-label">Comissão (R$)</label>
+                            <input type="number" class="form-control" id="commission-value" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="registration-date" class="form-label">Data de Cadastro</label>
+                            <input type="date" class="form-control" id="registration-date" required>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Cadastrar Parceiro</button>
+                        </div>
+                    </div>
+                </form>
+                
+                <h4>Parceiros Cadastrados</h4>
+                <div class="table-responsive">
+                    <table id="partners-table" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Cupom</th>
+                                <th>Desconto</th>
+                                <th>Comissão</th>
+                                <th>Data Cadastro</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partners-list">
+                            <!-- Dados serão preenchidos via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Aba de Contratos -->
+            <div class="tab-pane fade" id="contracts" role="tabpanel">
+                <h4>Registrar Uso de Cupom</h4>
+                <form id="contract-form" class="mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="contract-number" class="form-label">Número do Contrato</label>
+                            <input type="text" class="form-control" id="contract-number" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="used-coupon" class="form-label">Cupom Utilizado</label>
+                            <select class="form-select" id="used-coupon" required>
+                                <option value="">Selecione um cupom</option>
+                                <!-- Opções serão preenchidas via JavaScript -->
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="validation-date" class="form-label">Data de Validação</label>
+                            <input type="date" class="form-control" id="validation-date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="registered-by" class="form-label">Registrado por</label>
+                            <input type="text" class="form-control" id="registered-by" readonly>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Registrar Uso</button>
+                        </div>
+                    </div>
+                </form>
+                
+                <h4>Contratos Registrados</h4>
+                <div class="table-responsive">
+                    <table id="contracts-table" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Contrato</th>
+                                <th>Cupom</th>
+                                <th>Parceiro</th>
+                                <th>Data</th>
+                                <th>Comissão</th>
+                                <th>Registrado por</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contracts-list">
+                            <!-- Dados serão preenchidos via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Aba de Relatórios -->
+            <div class="tab-pane fade" id="reports" role="tabpanel">
+                <h4>Gerar Relatório de Comissões</h4>
+                <form id="report-form" class="mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="report-coupon" class="form-label">Filtrar por Cupom</label>
+                            <select class="form-select" id="report-coupon">
+                                <option value="">Todos os cupons</option>
+                                <!-- Opções serão preenchidas via JavaScript -->
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="start-date" class="form-label">Data Inicial</label>
+                            <input type="date" class="form-control" id="start-date">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="end-date" class="form-label">Data Final</label>
+                            <input type="date" class="form-control" id="end-date">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2">Gerar Relatório</button>
+                            <button type="button" id="export-pdf" class="btn btn-danger me-2">Exportar PDF</button>
+                            <button type="button" id="export-excel" class="btn btn-success">Exportar Excel</button>
+                        </div>
+                    </div>
+                </form>
+                
+                <h4>Resultado do Relatório</h4>
+                <div class="table-responsive">
+                    <table id="report-table" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Parceiro</th>
+                                <th>Cupom</th>
+                                <th>Contrato</th>
+                                <th>Data</th>
+                                <th>Comissão</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-results">
+                            <!-- Dados serão preenchidos via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <footer>Feito para Seja Fibra — Mantenha o padrão visual do site discounts</footer>
+    <!-- Modal de Confirmação -->
+    <div class="modal fade" id="confirm-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirm-modal-title">Confirmação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="confirm-modal-body">
+                    Tem certeza que deseja excluir este item?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete">Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <!-- Dependências: Firebase (compat), SheetJS (XLSX), jsPDF -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        // Inicialização do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4vkuVTM8P1k7qz6ZE88Is0ZhDoOhl8vE",
+            authDomain: "cupons-5b5fd.firebaseapp.com",
+            projectId: "cupons-5b5fd",
+            storageBucket: "cupons-5b5fd.appspot.com",
+            messagingSenderId: "40858719023",
+            appId: "1:40858719023:web:659377d616ad90b68487da",
+            databaseURL: "https://cupons-5b5fd-default-rtdb.firebaseio.com/"
+        };
 
-  <script>
-    // ========== CONFIG FIREBASE (substituir se necessário) ===========
-    const firebaseConfig = {
-      apiKey: "AIzaSyD4vkuVTM8P1k7qz6ZE88Is0ZhDoOhl8vE",
-      authDomain: "cupons-5b5fd.firebaseapp.com",
-      projectId: "cupons-5b5fd",
-      storageBucket: "cupons-5b5fd.firebasestorage.app",
-      messagingSenderId: "40858719023",
-      appId: "1:40858719023:web:659377d616ad90b68487da"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
-    const rtdbURL = 'https://cupons-5b5fd-default-rtdb.firebaseio.com/';
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
 
-    // Emails permitidos (cliente-side check para melhor UX; regras do DB já aplicadas)
-    const allowedUsers = [
-      'bioranss@gmail.com','ana@sejafibra.net','tais@sejafibra.net','eduarda@sejafibra.net',
-      'paulo@sejafibra.net','alissia@sejafibra.net','isabela@sejafibra.net','juliana@sejafibra.net'
-    ];
+        // Variáveis globais
+        let currentUser = null;
+        let itemToDelete = null;
+        let deleteType = null;
 
-    // ========== Helpers ===========
-    const $ = id=>document.getElementById(id);
-    const showView = name => {
-      document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
-      document.getElementById('view-'+name).classList.remove('hidden');
-    }
-    function formatMoney(v){return 'R$ '+Number(v||0).toFixed(2).replace('.',',')}
+        // Inicialização quando o DOM estiver pronto
+        $(document).ready(function() {
+            // Verificar estado de autenticação
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // Usuário autenticado
+                    currentUser = user;
+                    $('#auth-container').hide();
+                    $('#app-container').show();
+                    $('#registered-by').val(user.email);
+                    loadPartners();
+                    loadContracts();
+                    initDataTables();
+                } else {
+                    // Usuário não autenticado
+                    $('#auth-container').show();
+                    $('#app-container').hide();
+                }
+            });
 
-    // ========== AUTH ===========
-    $('btnLogin').addEventListener('click',async ()=>{
-      const email = $('email').value.trim();
-      const pass = $('password').value;
-      if(!email||!pass){$('loginMsg').textContent='Informe email e senha.';return}
-      try{
-        const res = await auth.signInWithEmailAndPassword(email,pass);
-        if(!allowedUsers.includes(email)){$('loginMsg').textContent='Conta não autorizada no painel.'; await auth.signOut(); return}
-        $('loginMsg').textContent='Autenticado.';
-      }catch(err){$('loginMsg').textContent = 'Erro: '+err.message}
-    })
-    $('btnSignOut').addEventListener('click',()=>auth.signOut());
-    $('btnSignOut2').addEventListener('click',()=>auth.signOut());
+            // Login
+            $('#login-btn').click(function(e) {
+                e.preventDefault();
+                const email = $('#email').val();
+                const password = $('#password').val();
+                
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(() => {
+                        $('#login-message').text('');
+                    })
+                    .catch(error => {
+                        $('#login-message').text('Erro no login: ' + error.message);
+                    });
+            });
 
-    // Demo quick sign-in (helper para testes locais sem precisar criar contas)
-    $('btnDemo').addEventListener('click',()=>{
-      // cria uma sessão local e mostra dashboard sem autenticar no Firebase (USAR APENAS PARA TESTE)
-      localStorage.setItem('demoUser','demo@sejafibra.net');
-      onAuthChange({email:'demo@sejafibra.net',isDemo:true});
-    })
+            // Logout
+            $('#logout-btn').click(function() {
+                auth.signOut();
+            });
 
-    auth.onAuthStateChanged(user=>{
-      if(user) onAuthChange({email:user.email});
-      else if(localStorage.getItem('demoUser')) onAuthChange({email:localStorage.getItem('demoUser'),isDemo:true});
-      else onAuthChange(null);
-    })
+            // Cadastrar Parceiro
+            $('#partner-form').submit(function(e) {
+                e.preventDefault();
+                
+                const partnerData = {
+                    name: $('#partner-name').val(),
+                    coupon: $('#coupon-code').val(),
+                    discount: $('#discount-percent').val(),
+                    commission: $('#commission-value').val(),
+                    date: $('#registration-date').val(),
+                    createdBy: currentUser.email,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                };
+                
+                database.ref('partners').push(partnerData)
+                    .then(() => {
+                        alert('Parceiro cadastrado com sucesso!');
+                        $('#partner-form')[0].reset();
+                        loadPartners();
+                    })
+                    .catch(error => {
+                        alert('Erro ao cadastrar: ' + error.message);
+                    });
+            });
 
-    function onAuthChange(user){
-      if(user){
-        $('cardLogin').classList.add('hidden');
-        $('dashboard').classList.remove('hidden');
-        $('userEmail').textContent = user.email;
-        $('btnSignOut').classList.remove('hidden');
-        loadAllLists();
-        showView('cupons');
-      }else{
-        $('cardLogin').classList.remove('hidden');
-        $('dashboard').classList.add('hidden');
-        $('userEmail').textContent = '';
-        $('btnSignOut').classList.add('hidden');
-      }
-    }
+            // Registrar Uso de Cupom
+            $('#contract-form').submit(function(e) {
+                e.preventDefault();
+                
+                const contractData = {
+                    contractNumber: $('#contract-number').val(),
+                    coupon: $('#used-coupon').val(),
+                    validationDate: $('#validation-date').val(),
+                    registeredBy: currentUser.email,
+                    registeredAt: firebase.database.ServerValue.TIMESTAMP
+                };
+                
+                database.ref('contracts').push(contractData)
+                    .then(() => {
+                        alert('Uso de cupom registrado com sucesso!');
+                        $('#contract-form')[0].reset();
+                        loadContracts();
+                    })
+                    .catch(error => {
+                        alert('Erro ao registrar: ' + error.message);
+                    });
+            });
 
-    // ========== DATABASE LOGIC ===========
-    // Estruturas: /influencers/{id}, /cupons/{code}, /usos/{pushId}
+            // Gerar Relatório
+            $('#report-form').submit(function(e) {
+                e.preventDefault();
+                generateReport();
+            });
 
-    // Load lists: influencers, cupons
-    async function loadAllLists(){
-      loadInfluencers();
-      loadCoupons();
-    }
+            // Exportar PDF
+            $('#export-pdf').click(function() {
+                exportToPDF();
+            });
 
-    function loadInfluencers(){
-      db.ref('influencers').once('value',snap=>{
-        const data = snap.val()||{};
-        const tbody = $('tableInfluencers').querySelector('tbody'); tbody.innerHTML='';
-        const sel = $('selectInfluencerForCoupon'); sel.innerHTML='';
-        const filterSel = $('filterInfluencer'); filterSel.innerHTML='<option value="">-- Todos --</option>';
-        Object.entries(data).forEach(([id,it])=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${it.name}</td><td>${it.email||''}</td><td><button class="small" data-id="${id}" data-action="delInf">Excluir</button></td>`;
-          tbody.appendChild(tr);
+            // Exportar Excel
+            $('#export-excel').click(function() {
+                exportToExcel();
+            });
 
-          const opt = document.createElement('option'); opt.value = id; opt.textContent = it.name; sel.appendChild(opt);
-          const opt2 = opt.cloneNode(true); filterSel.appendChild(opt2);
+            // Confirmar exclusão
+            $('#confirm-delete').click(function() {
+                if (deleteType === 'partner') {
+                    database.ref('partners/' + itemToDelete).remove()
+                        .then(() => {
+                            $('#confirm-modal').modal('hide');
+                            loadPartners();
+                        });
+                } else if (deleteType === 'contract') {
+                    database.ref('contracts/' + itemToDelete).remove()
+                        .then(() => {
+                            $('#confirm-modal').modal('hide');
+                            loadContracts();
+                        });
+                }
+            });
         });
-      })
-    }
 
-    function loadCoupons(){
-      db.ref('cupons').once('value',snap=>{
-        const data = snap.val()||{};
-        const tbody = $('tableCoupons').querySelector('tbody'); tbody.innerHTML='';
-        const regSel = $('regCupom'); regSel.innerHTML='';
-        const filterCupom = $('filterCupom'); filterCupom.innerHTML='<option value="">-- Todos --</option>';
-        Object.entries(data).forEach(([code,it])=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${code}</td><td>${it.influencerName||it.influencer}</td><td>${formatMoney(it.valor)}</td><td><button class="small" data-cupom="${code}" data-action="delCupom">Excluir</button></td>`;
-          tbody.appendChild(tr);
+        // Carregar parceiros
+        function loadPartners() {
+            database.ref('partners').once('value')
+                .then(snapshot => {
+                    $('#partners-list').empty();
+                    $('#used-coupon').empty().append('<option value="">Selecione um cupom</option>');
+                    $('#report-coupon').empty().append('<option value="">Todos os cupons</option>');
+                    
+                    snapshot.forEach(childSnapshot => {
+                        const partner = childSnapshot.val();
+                        const key = childSnapshot.key;
+                        
+                        // Adicionar à tabela de parceiros
+                        $('#partners-list').append(`
+                            <tr>
+                                <td>${partner.name}</td>
+                                <td>${partner.coupon}</td>
+                                <td>${partner.discount}%</td>
+                                <td>R$${parseFloat(partner.commission).toFixed(2)}</td>
+                                <td>${formatDate(partner.date)}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger delete-partner" data-key="${key}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                        
+                        // Adicionar às opções de cupom
+                        $('#used-coupon').append(`<option value="${partner.coupon}">${partner.coupon} - ${partner.name}</option>`);
+                        $('#report-coupon').append(`<option value="${partner.coupon}">${partner.coupon} - ${partner.name}</option>`);
+                    });
+                    
+                    // Configurar eventos de exclusão
+                    $('.delete-partner').click(function() {
+                        itemToDelete = $(this).data('key');
+                        deleteType = 'partner';
+                        $('#confirm-modal-title').text('Excluir Parceiro');
+                        $('#confirm-modal-body').html('Tem certeza que deseja excluir este parceiro?<br><strong>Esta ação não pode ser desfeita.</strong>');
+                        $('#confirm-modal').modal('show');
+                    });
+                });
+        }
 
-          const opt = document.createElement('option'); opt.value = code; opt.textContent = code + ' — ' + (it.influencerName||it.influencer); regSel.appendChild(opt);
-          const opt2 = opt.cloneNode(true); filterCupom.appendChild(opt2);
-        });
-      })
-    }
+        // Carregar contratos
+        function loadContracts() {
+            database.ref('contracts').once('value')
+                .then(snapshot => {
+                    $('#contracts-list').empty();
+                    
+                    snapshot.forEach(childSnapshot => {
+                        const contract = childSnapshot.val();
+                        const key = childSnapshot.key;
+                        
+                        // Primeiro, buscar informações do parceiro pelo cupom
+                        database.ref('partners').orderByChild('coupon').equalTo(contract.coupon).once('value')
+                            .then(partnerSnapshot => {
+                                let partnerName = 'Parceiro não encontrado';
+                                let commission = 'N/A';
+                                
+                                partnerSnapshot.forEach(partnerChild => {
+                                    const partner = partnerChild.val();
+                                    partnerName = partner.name;
+                                    commission = 'R$' + parseFloat(partner.commission).toFixed(2);
+                                });
+                                
+                                // Adicionar à tabela de contratos
+                                $('#contracts-list').append(`
+                                    <tr>
+                                        <td>${contract.contractNumber}</td>
+                                        <td>${contract.coupon}</td>
+                                        <td>${partnerName}</td>
+                                        <td>${formatDate(contract.validationDate)}</td>
+                                        <td>${commission}</td>
+                                        <td>${contract.registeredBy}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-danger delete-contract" data-key="${key}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `);
+                                
+                                // Configurar eventos de exclusão
+                                $('.delete-contract').click(function() {
+                                    itemToDelete = $(this).data('key');
+                                    deleteType = 'contract';
+                                    $('#confirm-modal-title').text('Excluir Registro de Contrato');
+                                    $('#confirm-modal-body').html('Tem certeza que deseja excluir este registro de contrato?<br><strong>Esta ação não pode ser desfeita.</strong>');
+                                    $('#confirm-modal').modal('show');
+                                });
+                            });
+                    });
+                });
+        }
 
-    // Add influencer
-    $('btnAddInfluencer').addEventListener('click',()=>{
-      const name = $('influencerName').value.trim();
-      const email = $('influencerEmail').value.trim();
-      if(!name){alert('Informe o nome do influencer');return}
-      const id = name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
-      db.ref('influencers/'+id).set({name, email}).then(()=>{$('influencerName').value='';$('influencerEmail').value='';loadInfluencers()});
-    })
+        // Gerar relatório
+        function generateReport() {
+            const couponFilter = $('#report-coupon').val();
+            const startDate = $('#start-date').val();
+            const endDate = $('#end-date').val();
+            
+            database.ref('contracts').once('value')
+                .then(snapshot => {
+                    $('#report-results').empty();
+                    let totalCommission = 0;
+                    let reportData = [];
+                    
+                    snapshot.forEach(childSnapshot => {
+                        const contract = childSnapshot.val();
+                        
+                        // Aplicar filtros
+                        if (couponFilter && contract.coupon !== couponFilter) return;
+                        if (startDate && contract.validationDate < startDate) return;
+                        if (endDate && contract.validationDate > endDate) return;
+                        
+                        // Buscar informações do parceiro
+                        database.ref('partners').orderByChild('coupon').equalTo(contract.coupon).once('value')
+                            .then(partnerSnapshot => {
+                                let partnerName = 'Parceiro não encontrado';
+                                let commission = 0;
+                                
+                                partnerSnapshot.forEach(partnerChild => {
+                                    const partner = partnerChild.val();
+                                    partnerName = partner.name;
+                                    commission = parseFloat(partner.commission);
+                                });
+                                
+                                totalCommission += commission;
+                                
+                                // Adicionar aos resultados
+                                $('#report-results').append(`
+                                    <tr>
+                                        <td>${partnerName}</td>
+                                        <td>${contract.coupon}</td>
+                                        <td>${contract.contractNumber}</td>
+                                        <td>${formatDate(contract.validationDate)}</td>
+                                        <td>R$${commission.toFixed(2)}</td>
+                                    </tr>
+                                `);
+                                
+                                // Armazenar dados para exportação
+                                reportData.push({
+                                    Parceira: partnerName,
+                                    Cupom: contract.coupon,
+                                    Contrato: contract.contractNumber,
+                                    Data: formatDate(contract.validationDate),
+                                    Comissão: 'R$' + commission.toFixed(2)
+                                });
+                                
+                                // Adicionar total se for o último item
+                                if (childSnapshot.key === snapshot.val()[Object.keys(snapshot.val())[Object.keys(snapshot.val()).length - 1]]) {
+                                    $('#report-results').append(`
+                                        <tr class="table-primary">
+                                            <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                            <td><strong>R$${totalCommission.toFixed(2)}</strong></td>
+                                        </tr>
+                                    `);
+                                    
+                                    // Armazenar dados totais
+                                    window.reportData = reportData;
+                                    window.totalCommission = totalCommission;
+                                }
+                            });
+                    });
+                    
+                    if ($('#report-results').children().length === 0) {
+                        $('#report-results').append('<tr><td colspan="5" class="text-center">Nenhum resultado encontrado com os filtros aplicados.</td></tr>');
+                    }
+                });
+        }
 
-    // Delete influencer (delegation)
-    document.getElementById('tableInfluencers').addEventListener('click',e=>{
-      const btn = e.target.closest('button'); if(!btn) return;
-      if(btn.dataset.action==='delInf'){
-        const id = btn.dataset.id;
-        if(confirm('Excluir influencer?')) db.ref('influencers/'+id).remove().then(()=>loadInfluencers());
-      }
-    })
+        // Exportar para PDF
+        function exportToPDF() {
+            if (!window.reportData || window.reportData.length === 0) {
+                alert('Gere um relatório antes de exportar.');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Título
+            doc.setFontSize(18);
+            doc.text('Relatório de Comissões', 105, 15, { align: 'center' });
+            
+            // Filtros aplicados
+            doc.setFontSize(12);
+            let filters = [];
+            if ($('#report-coupon').val()) filters.push(`Cupom: ${$('#report-coupon').find('option:selected').text()}`);
+            if ($('#start-date').val()) filters.push(`De: ${$('#start-date').val()}`);
+            if ($('#end-date').val()) filters.push(`Até: ${$('#end-date').val()}`);
+            
+            if (filters.length > 0) {
+                doc.text(`Filtros: ${filters.join(', ')}`, 14, 25);
+            }
+            
+            // Cabeçalho da tabela
+            const headers = [['Parceira', 'Cupom', 'Contrato', 'Data', 'Comissão']];
+            const data = window.reportData.map(item => [
+                item.Parceira,
+                item.Cupom,
+                item.Contrato,
+                item.Data,
+                item.Comissão
+            ]);
+            
+            // Adicionar total
+            data.push(['', '', '', 'Total:', 'R$' + window.totalCommission.toFixed(2)]);
+            
+            // Configuração da tabela
+            doc.autoTable({
+                head: headers,
+                body: data,
+                startY: filters.length > 0 ? 30 : 25,
+                margin: { left: 10 },
+                styles: { fontSize: 10 },
+                headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+                alternateRowStyles: { fillColor: [245, 245, 245] }
+            });
+            
+            // Rodapé
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.text(`Página ${i} de ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+                doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 195, doc.internal.pageSize.height - 10, { align: 'right' });
+            }
+            
+            doc.save(`Relatorio_Comissoes_${new Date().toISOString().slice(0,10)}.pdf`);
+        }
 
-    // Add/Update coupon
-    $('btnAddCoupon').addEventListener('click',()=>{
-      const influencerId = $('selectInfluencerForCoupon').value;
-      const code = $('couponCode').value.trim();
-      const valor = parseFloat($('couponValue').value)||0;
-      if(!influencerId||!code){alert('Escolha um influencer e informe o código do cupom');return}
-      db.ref('influencers/'+influencerId).once('value',snap=>{
-        const inf = snap.val();
-        db.ref('cupons/'+code).set({influencer:influencerId, influencerName:inf.name, valor:valor}).then(()=>{ $('couponCode').value=''; loadCoupons(); });
-      })
-    })
+        // Exportar para Excel
+        function exportToExcel() {
+            if (!window.reportData || window.reportData.length === 0) {
+                alert('Gere um relatório antes de exportar.');
+                return;
+            }
+            
+            // Adicionar linha de total
+            const dataToExport = [...window.reportData];
+            dataToExport.push({
+                Parceira: '',
+                Cupom: '',
+                Contrato: '',
+                Data: 'Total:',
+                Comissão: 'R$' + window.totalCommission.toFixed(2)
+            });
+            
+            // Criar planilha
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            
+            // Ajustar largura das colunas
+            ws['!cols'] = [
+                { wch: 30 }, // Parceira
+                { wch: 15 }, // Cupom
+                { wch: 15 }, // Contrato
+                { wch: 12 }, // Data
+                { wch: 10 }  // Comissão
+            ];
+            
+            // Criar workbook
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Relatório");
+            
+            // Exportar
+            XLSX.writeFile(wb, `Relatorio_Comissoes_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
 
-    // Delete coupon
-    document.getElementById('tableCoupons').addEventListener('click',e=>{
-      const btn = e.target.closest('button'); if(!btn) return;
-      if(btn.dataset.action==='delCupom'){
-        const code = btn.dataset.cupom;
-        if(confirm('Excluir cupom '+code+' ?')) db.ref('cupons/'+code).remove().then(()=>loadCoupons());
-      }
-    })
+        // Inicializar DataTables
+        function initDataTables() {
+            $('#partners-table').DataTable({
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+                }
+            });
+            
+            $('#contracts-table').DataTable({
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+                }
+            });
+            
+            $('#report-table').DataTable({
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+                },
+                searching: false,
+                paging: false,
+                info: false
+            });
+        }
 
-    // Register use
-    function todayDateInput(){ const d = new Date(); const mm = String(d.getMonth()+1).padStart(2,'0'); const dd = String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+mm+'-'+dd }
-    $('regData').value = todayDateInput();
-    $('btnRegisterUseQuick').addEventListener('click',()=>{ $('regData').value = todayDateInput(); registerUse(); })
-    $('btnRegisterUse').addEventListener('click',registerUse);
-
-    function registerUse(){
-      const contrato = $('regContrato').value.trim();
-      const cupom = $('regCupom').value;
-      const data = $('regData').value;
-      if(!contrato||!cupom||!data){alert('Preencha contrato, cupom e data');return}
-      db.ref('cupons/'+cupom).once('value',snap=>{
-        const cu = snap.val(); if(!cu){alert('Cupom não encontrado');return}
-        const valor = Number(cu.valor)||0;
-        const registro = {data, contrato, cupom, influencerId:cu.influencer, influencerName:cu.influencerName||'', valor};
-        db.ref('usos').push(registro).then(()=>{
-          alert('Registro salvo'); $('regContrato').value=''; loadCoupons();
-        })
-      })
-    }
-
-    // Reports
-    $('btnRunReport').addEventListener('click',async ()=>{
-      const from = $('filterFrom').value; const to = $('filterTo').value; const infl = $('filterInfluencer').value; const cupom = $('filterCupom').value;
-      const snap = await db.ref('usos').once('value'); const data = snap.val()||{};
-      const rows = [];
-      Object.values(data).forEach(it=>{
-        if(infl && it.influencerId !== infl) return;
-        if(cupom && it.cupom !== cupom) return;
-        if(from && it.data < from) return;
-        if(to && it.data > to) return;
-        rows.push(it);
-      })
-      renderReport(rows);
-    })
-
-    function renderReport(rows){
-      const tbody = $('tableReport').querySelector('tbody'); tbody.innerHTML='';
-      let total = 0;
-      rows.sort((a,b)=> a.data.localeCompare(b.data)).forEach(it=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${it.data}</td><td>${it.contrato}</td><td>${it.cupom}</td><td>${it.influencerName}</td><td>${formatMoney(it.valor)}</td>`;
-        tbody.appendChild(tr); total += Number(it.valor)||0;
-      })
-      $('reportTotal').textContent = formatMoney(total);
-    }
-
-    // Export XLS (SheetJS)
-    $('btnExportXLS').addEventListener('click',async ()=>{
-      const rows = await collectReportRowsForExport();
-      if(rows.length===0){alert('Nenhum registro para exportar'); return}
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
-      XLSX.writeFile(wb, 'relatorio_cupons.xlsx');
-    })
-
-    $('btnExportAll').addEventListener('click',async ()=>{
-      // export all usos
-      const snap = await db.ref('usos').once('value'); const data = snap.val()||{};
-      const rows = Object.values(data);
-      if(rows.length===0){alert('Sem dados');return}
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Usos');
-      XLSX.writeFile(wb, 'usos_cupons.xlsx');
-    })
-
-    async function collectReportRowsForExport(){
-      const from = $('filterFrom').value; const to = $('filterTo').value; const infl = $('filterInfluencer').value; const cupom = $('filterCupom').value;
-      const snap = await db.ref('usos').once('value'); const data = snap.val()||{};
-      const rows = [];
-      Object.values(data).forEach(it=>{
-        if(infl && it.influencerId !== infl) return;
-        if(cupom && it.cupom !== cupom) return;
-        if(from && it.data < from) return;
-        if(to && it.data > to) return;
-        rows.push({Data:it.data, Contrato:it.contrato, Cupom:it.cupom, Influencer:it.influencerName, Valor:it.valor});
-      });
-      return rows;
-    }
-
-    // Export PDF (jsPDF)
-    $('btnExportPDF').addEventListener('click',async ()=>{
-      const rows = await collectReportRowsForExport();
-      if(rows.length===0){alert('Nenhum registro');return}
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.setFontSize(12); doc.text('Relatório de Comissões - Seja Fibra',14,18);
-      let y = 30; doc.setFontSize(10);
-      doc.text('Data | Contrato | Cupom | Influencer | Valor',14,y);
-      y+=6;
-      let total=0;
-      rows.forEach(r=>{ if(y>270){doc.addPage(); y=20} doc.text(`${r.Data} | ${r.Contrato} | ${r.Cupom} | ${r.Influencer} | R$ ${Number(r.Valor).toFixed(2)}`,14,y); y+=6; total+=Number(r.Valor)||0 });
-      doc.text('Total: R$ '+total.toFixed(2),14,y+6);
-      doc.save('relatorio_comissoes.pdf');
-    })
-
-    // Small utility to fill selects on load
-    function loadStaticDefaults(){
-      // ensure default influencer exists (exemplo)
-      db.ref('influencers/jessica-dos-reis').once('value',snap=>{
-        if(!snap.exists()) db.ref('influencers/jessica-dos-reis').set({name:'Jéssica dos Reis', email:''});
-      })
-      // ensure example coupon
-      db.ref('cupons/jessikinha15').once('value',snap=>{
-        if(!snap.exists()) db.ref('cupons/jessikinha15').set({influencer:'jessica-dos-reis', influencerName:'Jéssica dos Reis', valor:2.50});
-      })
-    }
-
-    // Navigation
-    document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',e=>{ showView(e.target.dataset.view); }))
-
-    // Start
-    loadStaticDefaults();
-
-  </script>
+        // Formatar data
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString; // Se não for uma data válida, retorna o original
+            
+            return date.toLocaleDateString('pt-BR');
+        }
+    </script>
 </body>
 </html>
