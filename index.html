@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciamento de Cupons</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/sejafibra/cupons/refs/heads/main/faviconsf.ico" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
@@ -31,6 +32,10 @@
             position: absolute;
             top: 10px;
             right: 10px;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f8f9fa !important;
         }
     </style>
 </head>
@@ -217,6 +222,12 @@
                         <tbody id="report-results">
                             <!-- Dados serão preenchidos via JavaScript -->
                         </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="4" class="text-end"><strong>Total a Pagar:</strong></td>
+                                <td id="total-commission"><strong>R$0,00</strong></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -267,9 +278,16 @@
         let currentUser = null;
         let itemToDelete = null;
         let deleteType = null;
+        let lastReportData = null;
+        let lastTotalCommission = 0;
 
         // Inicialização quando o DOM estiver pronto
         $(document).ready(function() {
+            // Configurar data atual como padrão nos campos de data
+            const today = new Date().toISOString().split('T')[0];
+            $('#registration-date').val(today);
+            $('#validation-date').val(today);
+
             // Verificar estado de autenticação
             auth.onAuthStateChanged(user => {
                 if (user) {
@@ -312,12 +330,15 @@
             $('#partner-form').submit(function(e) {
                 e.preventDefault();
                 
+                // Ajustar a data para o formato YYYY-MM-DD (sem fuso horário)
+                const registrationDate = $('#registration-date').val();
+                
                 const partnerData = {
                     name: $('#partner-name').val(),
                     coupon: $('#coupon-code').val(),
                     discount: $('#discount-percent').val(),
                     commission: $('#commission-value').val(),
-                    date: $('#registration-date').val(),
+                    date: registrationDate, // Já está no formato YYYY-MM-DD
                     createdBy: currentUser.email,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 };
@@ -326,6 +347,7 @@
                     .then(() => {
                         alert('Parceiro cadastrado com sucesso!');
                         $('#partner-form')[0].reset();
+                        $('#registration-date').val(today); // Reset para data atual
                         loadPartners();
                     })
                     .catch(error => {
@@ -337,10 +359,13 @@
             $('#contract-form').submit(function(e) {
                 e.preventDefault();
                 
+                // Ajustar a data para o formato YYYY-MM-DD (sem fuso horário)
+                const validationDate = $('#validation-date').val();
+                
                 const contractData = {
                     contractNumber: $('#contract-number').val(),
                     coupon: $('#used-coupon').val(),
-                    validationDate: $('#validation-date').val(),
+                    validationDate: validationDate, // Já está no formato YYYY-MM-DD
                     registeredBy: currentUser.email,
                     registeredAt: firebase.database.ServerValue.TIMESTAMP
                 };
@@ -349,6 +374,7 @@
                     .then(() => {
                         alert('Uso de cupom registrado com sucesso!');
                         $('#contract-form')[0].reset();
+                        $('#validation-date').val(today); // Reset para data atual
                         loadContracts();
                     })
                     .catch(error => {
@@ -364,11 +390,19 @@
 
             // Exportar PDF
             $('#export-pdf').click(function() {
+                if (!lastReportData || lastReportData.length === 0) {
+                    alert('Gere um relatório antes de exportar.');
+                    return;
+                }
                 exportToPDF();
             });
 
             // Exportar Excel
             $('#export-excel').click(function() {
+                if (!lastReportData || lastReportData.length === 0) {
+                    alert('Gere um relatório antes de exportar.');
+                    return;
+                }
                 exportToExcel();
             });
 
@@ -408,7 +442,7 @@
                                 <td>${partner.name}</td>
                                 <td>${partner.coupon}</td>
                                 <td>${partner.discount}%</td>
-                                <td>R$${parseFloat(partner.commission).toFixed(2)}</td>
+                                <td>R$${parseFloat(partner.commission).toFixed(2).replace('.', ',')}</td>
                                 <td>${formatDate(partner.date)}</td>
                                 <td>
                                     <button class="btn btn-sm btn-danger delete-partner" data-key="${key}">
@@ -453,7 +487,7 @@
                                 partnerSnapshot.forEach(partnerChild => {
                                     const partner = partnerChild.val();
                                     partnerName = partner.name;
-                                    commission = 'R$' + parseFloat(partner.commission).toFixed(2);
+                                    commission = 'R$' + parseFloat(partner.commission).toFixed(2).replace('.', ',');
                                 });
                                 
                                 // Adicionar à tabela de contratos
@@ -498,6 +532,8 @@
                     let totalCommission = 0;
                     let reportData = [];
                     
+                    const promises = [];
+                    
                     snapshot.forEach(childSnapshot => {
                         const contract = childSnapshot.val();
                         
@@ -507,7 +543,7 @@
                         if (endDate && contract.validationDate > endDate) return;
                         
                         // Buscar informações do parceiro
-                        database.ref('partners').orderByChild('coupon').equalTo(contract.coupon).once('value')
+                        const promise = database.ref('partners').orderByChild('coupon').equalTo(contract.coupon).once('value')
                             .then(partnerSnapshot => {
                                 let partnerName = 'Parceiro não encontrado';
                                 let commission = 0;
@@ -527,7 +563,7 @@
                                         <td>${contract.coupon}</td>
                                         <td>${contract.contractNumber}</td>
                                         <td>${formatDate(contract.validationDate)}</td>
-                                        <td>R$${commission.toFixed(2)}</td>
+                                        <td>R$${commission.toFixed(2).replace('.', ',')}</td>
                                     </tr>
                                 `);
                                 
@@ -537,38 +573,31 @@
                                     Cupom: contract.coupon,
                                     Contrato: contract.contractNumber,
                                     Data: formatDate(contract.validationDate),
-                                    Comissão: 'R$' + commission.toFixed(2)
+                                    Comissão: 'R$' + commission.toFixed(2).replace('.', ',')
                                 });
-                                
-                                // Adicionar total se for o último item
-                                if (childSnapshot.key === snapshot.val()[Object.keys(snapshot.val())[Object.keys(snapshot.val()).length - 1]]) {
-                                    $('#report-results').append(`
-                                        <tr class="table-primary">
-                                            <td colspan="4" class="text-end"><strong>Total:</strong></td>
-                                            <td><strong>R$${totalCommission.toFixed(2)}</strong></td>
-                                        </tr>
-                                    `);
-                                    
-                                    // Armazenar dados totais
-                                    window.reportData = reportData;
-                                    window.totalCommission = totalCommission;
-                                }
                             });
+                        
+                        promises.push(promise);
                     });
                     
-                    if ($('#report-results').children().length === 0) {
-                        $('#report-results').append('<tr><td colspan="5" class="text-center">Nenhum resultado encontrado com os filtros aplicados.</td></tr>');
-                    }
+                    Promise.all(promises).then(() => {
+                        // Atualizar total
+                        $('#total-commission').html(`<strong>R$${totalCommission.toFixed(2).replace('.', ',')}</strong>`);
+                        
+                        // Armazenar dados para exportação
+                        lastReportData = reportData;
+                        lastTotalCommission = totalCommission;
+                        
+                        if ($('#report-results').children().length === 0) {
+                            $('#report-results').append('<tr><td colspan="5" class="text-center">Nenhum resultado encontrado com os filtros aplicados.</td></tr>');
+                            $('#total-commission').html('<strong>R$0,00</strong>');
+                        }
+                    });
                 });
         }
 
         // Exportar para PDF
         function exportToPDF() {
-            if (!window.reportData || window.reportData.length === 0) {
-                alert('Gere um relatório antes de exportar.');
-                return;
-            }
-            
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
@@ -580,8 +609,8 @@
             doc.setFontSize(12);
             let filters = [];
             if ($('#report-coupon').val()) filters.push(`Cupom: ${$('#report-coupon').find('option:selected').text()}`);
-            if ($('#start-date').val()) filters.push(`De: ${$('#start-date').val()}`);
-            if ($('#end-date').val()) filters.push(`Até: ${$('#end-date').val()}`);
+            if ($('#start-date').val()) filters.push(`De: ${formatDate($('#start-date').val())}`);
+            if ($('#end-date').val()) filters.push(`Até: ${formatDate($('#end-date').val())}`);
             
             if (filters.length > 0) {
                 doc.text(`Filtros: ${filters.join(', ')}`, 14, 25);
@@ -589,7 +618,7 @@
             
             // Cabeçalho da tabela
             const headers = [['Parceira', 'Cupom', 'Contrato', 'Data', 'Comissão']];
-            const data = window.reportData.map(item => [
+            const data = lastReportData.map(item => [
                 item.Parceira,
                 item.Cupom,
                 item.Contrato,
@@ -598,7 +627,7 @@
             ]);
             
             // Adicionar total
-            data.push(['', '', '', 'Total:', 'R$' + window.totalCommission.toFixed(2)]);
+            data.push(['', '', '', 'Total a Pagar:', 'R$' + lastTotalCommission.toFixed(2).replace('.', ',')]);
             
             // Configuração da tabela
             doc.autoTable({
@@ -617,7 +646,7 @@
                 doc.setPage(i);
                 doc.setFontSize(10);
                 doc.text(`Página ${i} de ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
-                doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 195, doc.internal.pageSize.height - 10, { align: 'right' });
+                doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 195, doc.internal.pageSize.height - 10, { align: 'right' });
             }
             
             doc.save(`Relatorio_Comissoes_${new Date().toISOString().slice(0,10)}.pdf`);
@@ -625,19 +654,14 @@
 
         // Exportar para Excel
         function exportToExcel() {
-            if (!window.reportData || window.reportData.length === 0) {
-                alert('Gere um relatório antes de exportar.');
-                return;
-            }
-            
             // Adicionar linha de total
-            const dataToExport = [...window.reportData];
+            const dataToExport = [...lastReportData];
             dataToExport.push({
                 Parceira: '',
                 Cupom: '',
                 Contrato: '',
-                Data: 'Total:',
-                Comissão: 'R$' + window.totalCommission.toFixed(2)
+                Data: 'Total a Pagar:',
+                Comissão: 'R$' + lastTotalCommission.toFixed(2).replace('.', ',')
             });
             
             // Criar planilha
@@ -684,14 +708,24 @@
             });
         }
 
-        // Formatar data
+        // Formatar data para exibição (DD/MM/YYYY)
         function formatDate(dateString) {
             if (!dateString) return '';
             
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString; // Se não for uma data válida, retorna o original
+            // Se já estiver no formato DD/MM/YYYY (contém /)
+            if (dateString.includes('/')) {
+                return dateString;
+            }
             
-            return date.toLocaleDateString('pt-BR');
+            // Se estiver no formato YYYY-MM-DD
+            if (dateString.includes('-')) {
+                const parts = dateString.split('-');
+                if (parts.length === 3) {
+                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
+            
+            return dateString;
         }
     </script>
 </body>
