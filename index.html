@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gerenciador de Cupons — Seja Fibra</title>
+
+  <!-- Icon / Logo (usar os mesmos do site) -->
+  <link rel="icon" href="https://sejafibra.net/wp-content/uploads/2023/06/logonovofibra.png" />
+
+  <!-- Estilo simples inspirado no site existente -->
+  <style>
+    :root{
+      --primary:#ff6600; /* laranja padrão */
+      --accent:#0056a6;  /* azul para contraste */
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --success:#16a34a;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:#0f172a}
+    header{background:linear-gradient(90deg,var(--primary),#ff8a33);padding:12px 20px;color:white;display:flex;align-items:center;gap:16px}
+    header img{height:44px}
+    header h1{font-size:18px;margin:0}
+    .container{max-width:1100px;margin:22px auto;padding:16px}
+    .card{background:var(--card);border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,0.06);margin-bottom:16px}
+    .grid{display:grid;gap:12px}
+    .two{grid-template-columns:1fr 320px}
+    .three{grid-template-columns:1fr 1fr 1fr}
+    label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+    input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;background:#fff}
+    button{background:var(--primary);color:white;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+    .btn-danger{background:#e02424}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #eef2f6;text-align:left}
+    .muted{color:var(--muted);font-size:13px}
+    .top-actions{display:flex;gap:8px;align-items:center}
+    .nav{display:flex;gap:8px}
+    .nav button{background:transparent;color:white;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12)}
+    .hidden{display:none}
+    .small{font-size:13px;padding:6px 8px}
+    footer{max-width:1100px;margin:0 auto;padding:10px;color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://sejafibra.net/wp-content/uploads/2023/06/logonovofibra.png" alt="Seja Fibra"/>
+    <h1>Gerenciador de Cupons — Seja Fibra</h1>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <div id="userEmail" class="muted"></div>
+      <button id="btnSignOut" class="small hidden">Sair</button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Login card -->
+    <div id="cardLogin" class="card">
+      <h2>Login</h2>
+      <p class="muted">Faça login com a conta autorizada (e-mail e senha).</p>
+      <div style="max-width:420px">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" />
+        <label for="password">Senha</label>
+        <input id="password" type="password" autocomplete="current-password" />
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="btnLogin">Entrar</button>
+          <button id="btnDemo" class="small">Login demo (não faz Auth)</button>
+        </div>
+        <p id="loginMsg" class="muted" style="margin-top:10px"></p>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="nav">
+            <button class="small" data-view="cupons">Cupons</button>
+            <button class="small" data-view="influencers">Influencers</button>
+            <button class="small" data-view="registro">Registrar Uso</button>
+            <button class="small" data-view="relatorios">Relatórios</button>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button id="btnExportAll" class="small">Exportar tudo (XLS)</button>
+            <button id="btnSignOut2" class="small btn-danger">Sair</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cupons -->
+      <div id="view-cupons" class="card view">
+        <h3>Gerenciar Cupons</h3>
+        <div class="grid two">
+          <div>
+            <label>Selecionar Influencer</label>
+            <select id="selectInfluencerForCoupon"></select>
+            <label>Código do Cupom</label>
+            <input id="couponCode" placeholder="ex: jessikinha15" />
+            <label>Valor pago por uso (R$)</label>
+            <input id="couponValue" type="number" step="0.01" value="2.50" />
+            <div style="margin-top:10px">
+              <button id="btnAddCoupon">Adicionar / Atualizar Cupom</button>
+            </div>
+            <p class="muted" style="margin-top:8px">Obs: se o cupom já existir, ele será atualizado.</p>
+          </div>
+          <div>
+            <h4>Cupons cadastrados</h4>
+            <table id="tableCoupons"><thead><tr><th>Cupom</th><th>Influencer</th><th>Valor (R$)</th><th></th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Influencers -->
+      <div id="view-influencers" class="card view hidden">
+        <h3>Gerenciar Influencers</h3>
+        <div class="grid two">
+          <div>
+            <label>Nome do Influencer</label>
+            <input id="influencerName" placeholder="Jéssica dos Reis" />
+            <label>Email para referência (opcional)</label>
+            <input id="influencerEmail" placeholder="jessikinha@email.com" />
+            <div style="margin-top:10px">
+              <button id="btnAddInfluencer">Adicionar Influencer</button>
+            </div>
+          </div>
+          <div>
+            <h4>Lista de influencers</h4>
+            <table id="tableInfluencers"><thead><tr><th>Nome</th><th>Email</th><th></th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registrar uso -->
+      <div id="view-registro" class="card view hidden">
+        <h3>Registrar Uso de Cupom</h3>
+        <div style="max-width:640px">
+          <label>Nº do contrato</label>
+          <input id="regContrato" placeholder="1234567" />
+          <label>Selecione o cupom</label>
+          <select id="regCupom"></select>
+          <label>Data do uso</label>
+          <input id="regData" type="date" />
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button id="btnRegisterUse">Registrar Uso</button>
+            <button id="btnRegisterUseQuick" class="small">Registrar Hoje (Rápido)</button>
+          </div>
+          <p class="muted" style="margin-top:8px">Ao registrar, será gravado: data, cupom, influencer, contrato e valor.</p>
+        </div>
+      </div>
+
+      <!-- Relatórios -->
+      <div id="view-relatorios" class="card view hidden">
+        <h3>Relatórios de Comissão</h3>
+        <div class="grid three" style="align-items:end">
+          <div>
+            <label>Filtrar por influencer</label>
+            <select id="filterInfluencer"><option value="">-- Todos --</option></select>
+          </div>
+          <div>
+            <label>Filtrar por cupom</label>
+            <select id="filterCupom"><option value="">-- Todos --</option></select>
+          </div>
+          <div>
+            <label>Período</label>
+            <div style="display:flex;gap:8px"><input id="filterFrom" type="date" /> <input id="filterTo" type="date" /></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="btnRunReport">Gerar relatório</button>
+          <button id="btnExportXLS" class="small">Exportar XLS</button>
+          <button id="btnExportPDF" class="small">Exportar PDF</button>
+        </div>
+        <div style="margin-top:12px">
+          <h4>Resultado</h4>
+          <table id="tableReport"><thead><tr><th>Data</th><th>Contrato</th><th>Cupom</th><th>Influencer</th><th>Valor (R$)</th></tr></thead><tbody></tbody><tfoot><tr><td colspan="4" style="text-align:right">Total</td><td id="reportTotal">R$ 0,00</td></tr></tfoot></table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer>Feito para Seja Fibra — Mantenha o padrão visual do site discounts</footer>
+
+  <!-- Dependências: Firebase (compat), SheetJS (XLSX), jsPDF -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    // ========== CONFIG FIREBASE (substituir se necessário) ===========
+    const firebaseConfig = {
+      apiKey: "AIzaSyD4vkuVTM8P1k7qz6ZE88Is0ZhDoOhl8vE",
+      authDomain: "cupons-5b5fd.firebaseapp.com",
+      projectId: "cupons-5b5fd",
+      storageBucket: "cupons-5b5fd.firebasestorage.app",
+      messagingSenderId: "40858719023",
+      appId: "1:40858719023:web:659377d616ad90b68487da"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const rtdbURL = 'https://cupons-5b5fd-default-rtdb.firebaseio.com/';
+
+    // Emails permitidos (cliente-side check para melhor UX; regras do DB já aplicadas)
+    const allowedUsers = [
+      'bioranss@gmail.com','ana@sejafibra.net','tais@sejafibra.net','eduarda@sejafibra.net',
+      'paulo@sejafibra.net','alissia@sejafibra.net','isabela@sejafibra.net','juliana@sejafibra.net'
+    ];
+
+    // ========== Helpers ===========
+    const $ = id=>document.getElementById(id);
+    const showView = name => {
+      document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+      document.getElementById('view-'+name).classList.remove('hidden');
+    }
+    function formatMoney(v){return 'R$ '+Number(v||0).toFixed(2).replace('.',',')}
+
+    // ========== AUTH ===========
+    $('btnLogin').addEventListener('click',async ()=>{
+      const email = $('email').value.trim();
+      const pass = $('password').value;
+      if(!email||!pass){$('loginMsg').textContent='Informe email e senha.';return}
+      try{
+        const res = await auth.signInWithEmailAndPassword(email,pass);
+        if(!allowedUsers.includes(email)){$('loginMsg').textContent='Conta não autorizada no painel.'; await auth.signOut(); return}
+        $('loginMsg').textContent='Autenticado.';
+      }catch(err){$('loginMsg').textContent = 'Erro: '+err.message}
+    })
+    $('btnSignOut').addEventListener('click',()=>auth.signOut());
+    $('btnSignOut2').addEventListener('click',()=>auth.signOut());
+
+    // Demo quick sign-in (helper para testes locais sem precisar criar contas)
+    $('btnDemo').addEventListener('click',()=>{
+      // cria uma sessão local e mostra dashboard sem autenticar no Firebase (USAR APENAS PARA TESTE)
+      localStorage.setItem('demoUser','demo@sejafibra.net');
+      onAuthChange({email:'demo@sejafibra.net',isDemo:true});
+    })
+
+    auth.onAuthStateChanged(user=>{
+      if(user) onAuthChange({email:user.email});
+      else if(localStorage.getItem('demoUser')) onAuthChange({email:localStorage.getItem('demoUser'),isDemo:true});
+      else onAuthChange(null);
+    })
+
+    function onAuthChange(user){
+      if(user){
+        $('cardLogin').classList.add('hidden');
+        $('dashboard').classList.remove('hidden');
+        $('userEmail').textContent = user.email;
+        $('btnSignOut').classList.remove('hidden');
+        loadAllLists();
+        showView('cupons');
+      }else{
+        $('cardLogin').classList.remove('hidden');
+        $('dashboard').classList.add('hidden');
+        $('userEmail').textContent = '';
+        $('btnSignOut').classList.add('hidden');
+      }
+    }
+
+    // ========== DATABASE LOGIC ===========
+    // Estruturas: /influencers/{id}, /cupons/{code}, /usos/{pushId}
+
+    // Load lists: influencers, cupons
+    async function loadAllLists(){
+      loadInfluencers();
+      loadCoupons();
+    }
+
+    function loadInfluencers(){
+      db.ref('influencers').once('value',snap=>{
+        const data = snap.val()||{};
+        const tbody = $('tableInfluencers').querySelector('tbody'); tbody.innerHTML='';
+        const sel = $('selectInfluencerForCoupon'); sel.innerHTML='';
+        const filterSel = $('filterInfluencer'); filterSel.innerHTML='<option value="">-- Todos --</option>';
+        Object.entries(data).forEach(([id,it])=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${it.name}</td><td>${it.email||''}</td><td><button class="small" data-id="${id}" data-action="delInf">Excluir</button></td>`;
+          tbody.appendChild(tr);
+
+          const opt = document.createElement('option'); opt.value = id; opt.textContent = it.name; sel.appendChild(opt);
+          const opt2 = opt.cloneNode(true); filterSel.appendChild(opt2);
+        });
+      })
+    }
+
+    function loadCoupons(){
+      db.ref('cupons').once('value',snap=>{
+        const data = snap.val()||{};
+        const tbody = $('tableCoupons').querySelector('tbody'); tbody.innerHTML='';
+        const regSel = $('regCupom'); regSel.innerHTML='';
+        const filterCupom = $('filterCupom'); filterCupom.innerHTML='<option value="">-- Todos --</option>';
+        Object.entries(data).forEach(([code,it])=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${code}</td><td>${it.influencerName||it.influencer}</td><td>${formatMoney(it.valor)}</td><td><button class="small" data-cupom="${code}" data-action="delCupom">Excluir</button></td>`;
+          tbody.appendChild(tr);
+
+          const opt = document.createElement('option'); opt.value = code; opt.textContent = code + ' — ' + (it.influencerName||it.influencer); regSel.appendChild(opt);
+          const opt2 = opt.cloneNode(true); filterCupom.appendChild(opt2);
+        });
+      })
+    }
+
+    // Add influencer
+    $('btnAddInfluencer').addEventListener('click',()=>{
+      const name = $('influencerName').value.trim();
+      const email = $('influencerEmail').value.trim();
+      if(!name){alert('Informe o nome do influencer');return}
+      const id = name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+      db.ref('influencers/'+id).set({name, email}).then(()=>{$('influencerName').value='';$('influencerEmail').value='';loadInfluencers()});
+    })
+
+    // Delete influencer (delegation)
+    document.getElementById('tableInfluencers').addEventListener('click',e=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      if(btn.dataset.action==='delInf'){
+        const id = btn.dataset.id;
+        if(confirm('Excluir influencer?')) db.ref('influencers/'+id).remove().then(()=>loadInfluencers());
+      }
+    })
+
+    // Add/Update coupon
+    $('btnAddCoupon').addEventListener('click',()=>{
+      const influencerId = $('selectInfluencerForCoupon').value;
+      const code = $('couponCode').value.trim();
+      const valor = parseFloat($('couponValue').value)||0;
+      if(!influencerId||!code){alert('Escolha um influencer e informe o código do cupom');return}
+      db.ref('influencers/'+influencerId).once('value',snap=>{
+        const inf = snap.val();
+        db.ref('cupons/'+code).set({influencer:influencerId, influencerName:inf.name, valor:valor}).then(()=>{ $('couponCode').value=''; loadCoupons(); });
+      })
+    })
+
+    // Delete coupon
+    document.getElementById('tableCoupons').addEventListener('click',e=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      if(btn.dataset.action==='delCupom'){
+        const code = btn.dataset.cupom;
+        if(confirm('Excluir cupom '+code+' ?')) db.ref('cupons/'+code).remove().then(()=>loadCoupons());
+      }
+    })
+
+    // Register use
+    function todayDateInput(){ const d = new Date(); const mm = String(d.getMonth()+1).padStart(2,'0'); const dd = String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+mm+'-'+dd }
+    $('regData').value = todayDateInput();
+    $('btnRegisterUseQuick').addEventListener('click',()=>{ $('regData').value = todayDateInput(); registerUse(); })
+    $('btnRegisterUse').addEventListener('click',registerUse);
+
+    function registerUse(){
+      const contrato = $('regContrato').value.trim();
+      const cupom = $('regCupom').value;
+      const data = $('regData').value;
+      if(!contrato||!cupom||!data){alert('Preencha contrato, cupom e data');return}
+      db.ref('cupons/'+cupom).once('value',snap=>{
+        const cu = snap.val(); if(!cu){alert('Cupom não encontrado');return}
+        const valor = Number(cu.valor)||0;
+        const registro = {data, contrato, cupom, influencerId:cu.influencer, influencerName:cu.influencerName||'', valor};
+        db.ref('usos').push(registro).then(()=>{
+          alert('Registro salvo'); $('regContrato').value=''; loadCoupons();
+        })
+      })
+    }
+
+    // Reports
+    $('btnRunReport').addEventListener('click',async ()=>{
+      const from = $('filterFrom').value; const to = $('filterTo').value; const infl = $('filterInfluencer').value; const cupom = $('filterCupom').value;
+      const snap = await db.ref('usos').once('value'); const data = snap.val()||{};
+      const rows = [];
+      Object.values(data).forEach(it=>{
+        if(infl && it.influencerId !== infl) return;
+        if(cupom && it.cupom !== cupom) return;
+        if(from && it.data < from) return;
+        if(to && it.data > to) return;
+        rows.push(it);
+      })
+      renderReport(rows);
+    })
+
+    function renderReport(rows){
+      const tbody = $('tableReport').querySelector('tbody'); tbody.innerHTML='';
+      let total = 0;
+      rows.sort((a,b)=> a.data.localeCompare(b.data)).forEach(it=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${it.data}</td><td>${it.contrato}</td><td>${it.cupom}</td><td>${it.influencerName}</td><td>${formatMoney(it.valor)}</td>`;
+        tbody.appendChild(tr); total += Number(it.valor)||0;
+      })
+      $('reportTotal').textContent = formatMoney(total);
+    }
+
+    // Export XLS (SheetJS)
+    $('btnExportXLS').addEventListener('click',async ()=>{
+      const rows = await collectReportRowsForExport();
+      if(rows.length===0){alert('Nenhum registro para exportar'); return}
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+      XLSX.writeFile(wb, 'relatorio_cupons.xlsx');
+    })
+
+    $('btnExportAll').addEventListener('click',async ()=>{
+      // export all usos
+      const snap = await db.ref('usos').once('value'); const data = snap.val()||{};
+      const rows = Object.values(data);
+      if(rows.length===0){alert('Sem dados');return}
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Usos');
+      XLSX.writeFile(wb, 'usos_cupons.xlsx');
+    })
+
+    async function collectReportRowsForExport(){
+      const from = $('filterFrom').value; const to = $('filterTo').value; const infl = $('filterInfluencer').value; const cupom = $('filterCupom').value;
+      const snap = await db.ref('usos').once('value'); const data = snap.val()||{};
+      const rows = [];
+      Object.values(data).forEach(it=>{
+        if(infl && it.influencerId !== infl) return;
+        if(cupom && it.cupom !== cupom) return;
+        if(from && it.data < from) return;
+        if(to && it.data > to) return;
+        rows.push({Data:it.data, Contrato:it.contrato, Cupom:it.cupom, Influencer:it.influencerName, Valor:it.valor});
+      });
+      return rows;
+    }
+
+    // Export PDF (jsPDF)
+    $('btnExportPDF').addEventListener('click',async ()=>{
+      const rows = await collectReportRowsForExport();
+      if(rows.length===0){alert('Nenhum registro');return}
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(12); doc.text('Relatório de Comissões - Seja Fibra',14,18);
+      let y = 30; doc.setFontSize(10);
+      doc.text('Data | Contrato | Cupom | Influencer | Valor',14,y);
+      y+=6;
+      let total=0;
+      rows.forEach(r=>{ if(y>270){doc.addPage(); y=20} doc.text(`${r.Data} | ${r.Contrato} | ${r.Cupom} | ${r.Influencer} | R$ ${Number(r.Valor).toFixed(2)}`,14,y); y+=6; total+=Number(r.Valor)||0 });
+      doc.text('Total: R$ '+total.toFixed(2),14,y+6);
+      doc.save('relatorio_comissoes.pdf');
+    })
+
+    // Small utility to fill selects on load
+    function loadStaticDefaults(){
+      // ensure default influencer exists (exemplo)
+      db.ref('influencers/jessica-dos-reis').once('value',snap=>{
+        if(!snap.exists()) db.ref('influencers/jessica-dos-reis').set({name:'Jéssica dos Reis', email:''});
+      })
+      // ensure example coupon
+      db.ref('cupons/jessikinha15').once('value',snap=>{
+        if(!snap.exists()) db.ref('cupons/jessikinha15').set({influencer:'jessica-dos-reis', influencerName:'Jéssica dos Reis', valor:2.50});
+      })
+    }
+
+    // Navigation
+    document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',e=>{ showView(e.target.dataset.view); }))
+
+    // Start
+    loadStaticDefaults();
+
+  </script>
+</body>
+</html>
