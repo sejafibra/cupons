@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <style>
         .auth-container {
@@ -201,7 +200,6 @@
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary me-2">Gerar Relatório</button>
-                            <button type="button" id="export-pdf" class="btn btn-danger me-2">Exportar PDF</button>
                             <button type="button" id="export-excel" class="btn btn-success">Exportar Excel</button>
                         </div>
                     </div>
@@ -386,15 +384,6 @@
             $('#report-form').submit(function(e) {
                 e.preventDefault();
                 generateReport();
-            });
-
-            // Exportar PDF
-            $('#export-pdf').click(function() {
-                if (!lastReportData || lastReportData.length === 0) {
-                    alert('Gere um relatório antes de exportar.');
-                    return;
-                }
-                exportToPDF();
             });
 
             // Exportar Excel
@@ -594,62 +583,6 @@
                         }
                     });
                 });
-        }
-
-        // Exportar para PDF
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Título
-            doc.setFontSize(18);
-            doc.text('Relatório de Comissões', 105, 15, { align: 'center' });
-            
-            // Filtros aplicados
-            doc.setFontSize(12);
-            let filters = [];
-            if ($('#report-coupon').val()) filters.push(`Cupom: ${$('#report-coupon').find('option:selected').text()}`);
-            if ($('#start-date').val()) filters.push(`De: ${formatDate($('#start-date').val())}`);
-            if ($('#end-date').val()) filters.push(`Até: ${formatDate($('#end-date').val())}`);
-            
-            if (filters.length > 0) {
-                doc.text(`Filtros: ${filters.join(', ')}`, 14, 25);
-            }
-            
-            // Cabeçalho da tabela
-            const headers = [['Parceira', 'Cupom', 'Contrato', 'Data', 'Comissão']];
-            const data = lastReportData.map(item => [
-                item.Parceira,
-                item.Cupom,
-                item.Contrato,
-                item.Data,
-                item.Comissão
-            ]);
-            
-            // Adicionar total
-            data.push(['', '', '', 'Total a Pagar:', 'R$' + lastTotalCommission.toFixed(2).replace('.', ',')]);
-            
-            // Configuração da tabela
-            doc.autoTable({
-                head: headers,
-                body: data,
-                startY: filters.length > 0 ? 30 : 25,
-                margin: { left: 10 },
-                styles: { fontSize: 10 },
-                headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-                alternateRowStyles: { fillColor: [245, 245, 245] }
-            });
-            
-            // Rodapé
-            const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(10);
-                doc.text(`Página ${i} de ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
-                doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 195, doc.internal.pageSize.height - 10, { align: 'right' });
-            }
-            
-            doc.save(`Relatorio_Comissoes_${new Date().toISOString().slice(0,10)}.pdf`);
         }
 
         // Exportar para Excel
