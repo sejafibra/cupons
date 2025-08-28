@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciamento de Cupons</title>
+    <title>Gerenciamento de Comissões</title>
     <link rel="icon" href="https://raw.githubusercontent.com/sejafibra/cupons/refs/heads/main/faviconsf.ico" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
@@ -36,6 +36,15 @@
             font-weight: bold;
             background-color: #f8f9fa !important;
         }
+        .admin-only {
+            display: none;
+        }
+        .is-admin .admin-only {
+            display: block;
+        }
+        .is-admin .admin-tab {
+            display: list-item;
+        }
     </style>
 </head>
 <body>
@@ -61,10 +70,10 @@
     <!-- Aplicação Principal (visível após login) -->
     <div id="app-container" class="main-container" style="display: none;">
         <button id="logout-btn" class="btn btn-danger logout-btn">Sair</button>
-        <h2 class="text-center mb-4">Gerenciamento de Cupons</h2>
+        <h2 class="text-center mb-4">Gerenciamento de Comissões</h2>
         
         <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
+            <li class="nav-item admin-tab" role="presentation" style="display: none;">
                 <button class="nav-link active" id="partners-tab" data-bs-toggle="tab" data-bs-target="#partners" type="button" role="tab">Parceiros</button>
             </li>
             <li class="nav-item" role="presentation">
@@ -86,18 +95,10 @@
                             <input type="text" class="form-control" id="partner-name" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="coupon-code" class="form-label">Código do Cupom</label>
-                            <input type="text" class="form-control" id="coupon-code" required>
+                            <label for="commission-percent" class="form-label">% Comissão</label>
+                            <input type="number" class="form-control" id="commission-percent" min="1" max="100" required>
                         </div>
-                        <div class="col-md-4">
-                            <label for="discount-percent" class="form-label">% de Desconto</label>
-                            <input type="number" class="form-control" id="discount-percent" min="1" max="100" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="commission-value" class="form-label">Comissão (R$)</label>
-                            <input type="number" class="form-control" id="commission-value" step="0.01" min="0" required>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="registration-date" class="form-label">Data de Cadastro</label>
                             <input type="date" class="form-control" id="registration-date" required>
                         </div>
@@ -113,8 +114,6 @@
                         <thead>
                             <tr>
                                 <th>Nome</th>
-                                <th>Cupom</th>
-                                <th>Desconto</th>
                                 <th>Comissão</th>
                                 <th>Data Cadastro</th>
                                 <th>Ações</th>
@@ -129,7 +128,7 @@
             
             <!-- Aba de Contratos -->
             <div class="tab-pane fade" id="contracts" role="tabpanel">
-                <h4>Registrar Uso de Cupom</h4>
+                <h4>Registrar Contrato</h4>
                 <form id="contract-form" class="mb-4">
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -137,11 +136,15 @@
                             <input type="text" class="form-control" id="contract-number" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="used-coupon" class="form-label">Cupom Utilizado</label>
-                            <select class="form-select" id="used-coupon" required>
-                                <option value="">Selecione um cupom</option>
+                            <label for="selected-partner" class="form-label">Parceiro</label>
+                            <select class="form-select" id="selected-partner" required>
+                                <option value="">Selecione um parceiro</option>
                                 <!-- Opções serão preenchidas via JavaScript -->
                             </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="monthly-value" class="form-label">R$ Mensalidade</label>
+                            <input type="number" class="form-control" id="monthly-value" step="0.01" min="0" required>
                         </div>
                         <div class="col-md-6">
                             <label for="validation-date" class="form-label">Data de Validação</label>
@@ -152,7 +155,7 @@
                             <input type="text" class="form-control" id="registered-by" readonly>
                         </div>
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Registrar Uso</button>
+                            <button type="submit" class="btn btn-primary">Registrar Contrato</button>
                         </div>
                     </div>
                 </form>
@@ -163,10 +166,10 @@
                         <thead>
                             <tr>
                                 <th>Contrato</th>
-                                <th>Cupom</th>
                                 <th>Parceiro</th>
-                                <th>Data</th>
+                                <th>Mensalidade</th>
                                 <th>Comissão</th>
+                                <th>Data</th>
                                 <th>Registrado por</th>
                                 <th>Ações</th>
                             </tr>
@@ -184,9 +187,9 @@
                 <form id="report-form" class="mb-4">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label for="report-coupon" class="form-label">Filtrar por Cupom</label>
-                            <select class="form-select" id="report-coupon">
-                                <option value="">Todos os cupons</option>
+                            <label for="report-partner" class="form-label">Filtrar por Parceiro</label>
+                            <select class="form-select" id="report-partner">
+                                <option value="">Todos os parceiros</option>
                                 <!-- Opções serão preenchidas via JavaScript -->
                             </select>
                         </div>
@@ -211,10 +214,11 @@
                         <thead>
                             <tr>
                                 <th>Parceiro</th>
-                                <th>Cupom</th>
                                 <th>Contrato</th>
-                                <th>Data</th>
+                                <th>Mensalidade</th>
+                                <th>% Comissão</th>
                                 <th>Comissão</th>
+                                <th>Data</th>
                             </tr>
                         </thead>
                         <tbody id="report-results">
@@ -223,7 +227,7 @@
                         <tfoot>
                             <tr class="total-row">
                                 <td colspan="4" class="text-end"><strong>Total a Pagar:</strong></td>
-                                <td id="total-commission"><strong>R$0,00</strong></td>
+                                <td colspan="2" id="total-commission"><strong>R$0,00</strong></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -274,6 +278,7 @@
 
         // Variáveis globais
         let currentUser = null;
+        let isAdmin = false;
         let itemToDelete = null;
         let deleteType = null;
         let lastReportData = null;
@@ -291,6 +296,17 @@
                 if (user) {
                     // Usuário autenticado
                     currentUser = user;
+                    
+                    // Verificar se é admin
+                    const adminEmails = ['bioranss@gmail.com', 'paulo@sejafibra.com', 'financeiro@sejafibra.com'];
+                    const isSejaFibraNet = user.email.endsWith('@sejafibra.net');
+                    
+                    isAdmin = adminEmails.includes(user.email) || isSejaFibraNet;
+                    
+                    if (isAdmin) {
+                        $('body').addClass('is-admin');
+                    }
+                    
                     $('#auth-container').hide();
                     $('#app-container').show();
                     $('#registered-by').val(user.email);
@@ -328,14 +344,17 @@
             $('#partner-form').submit(function(e) {
                 e.preventDefault();
                 
+                if (!isAdmin) {
+                    alert('Apenas administradores podem cadastrar parceiros.');
+                    return;
+                }
+                
                 // Ajustar a data para o formato YYYY-MM-DD (sem fuso horário)
                 const registrationDate = $('#registration-date').val();
                 
                 const partnerData = {
                     name: $('#partner-name').val(),
-                    coupon: $('#coupon-code').val(),
-                    discount: $('#discount-percent').val(),
-                    commission: $('#commission-value').val(),
+                    commissionPercent: $('#commission-percent').val(),
                     date: registrationDate, // Já está no formato YYYY-MM-DD
                     createdBy: currentUser.email,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
@@ -353,7 +372,7 @@
                     });
             });
 
-            // Registrar Uso de Cupom
+            // Registrar Contrato
             $('#contract-form').submit(function(e) {
                 e.preventDefault();
                 
@@ -362,7 +381,8 @@
                 
                 const contractData = {
                     contractNumber: $('#contract-number').val(),
-                    coupon: $('#used-coupon').val(),
+                    partnerId: $('#selected-partner').val(),
+                    monthlyValue: $('#monthly-value').val(),
                     validationDate: validationDate, // Já está no formato YYYY-MM-DD
                     registeredBy: currentUser.email,
                     registeredAt: firebase.database.ServerValue.TIMESTAMP
@@ -370,7 +390,7 @@
                 
                 database.ref('contracts').push(contractData)
                     .then(() => {
-                        alert('Uso de cupom registrado com sucesso!');
+                        alert('Contrato registrado com sucesso!');
                         $('#contract-form')[0].reset();
                         $('#validation-date').val(today); // Reset para data atual
                         loadContracts();
@@ -398,6 +418,12 @@
             // Confirmar exclusão
             $('#confirm-delete').click(function() {
                 if (deleteType === 'partner') {
+                    if (!isAdmin) {
+                        alert('Apenas administradores podem excluir parceiros.');
+                        $('#confirm-modal').modal('hide');
+                        return;
+                    }
+                    
                     database.ref('partners/' + itemToDelete).remove()
                         .then(() => {
                             $('#confirm-modal').modal('hide');
@@ -418,8 +444,8 @@
             database.ref('partners').once('value')
                 .then(snapshot => {
                     $('#partners-list').empty();
-                    $('#used-coupon').empty().append('<option value="">Selecione um cupom</option>');
-                    $('#report-coupon').empty().append('<option value="">Todos os cupons</option>');
+                    $('#selected-partner').empty().append('<option value="">Selecione um parceiro</option>');
+                    $('#report-partner').empty().append('<option value="">Todos os parceiros</option>');
                     
                     snapshot.forEach(childSnapshot => {
                         const partner = childSnapshot.val();
@@ -429,9 +455,7 @@
                         $('#partners-list').append(`
                             <tr>
                                 <td>${partner.name}</td>
-                                <td>${partner.coupon}</td>
-                                <td>${partner.discount}%</td>
-                                <td>R$${parseFloat(partner.commission).toFixed(2).replace('.', ',')}</td>
+                                <td>${partner.commissionPercent}%</td>
                                 <td>${formatDate(partner.date)}</td>
                                 <td>
                                     <button class="btn btn-sm btn-danger delete-partner" data-key="${key}">
@@ -441,9 +465,9 @@
                             </tr>
                         `);
                         
-                        // Adicionar às opções de cupom
-                        $('#used-coupon').append(`<option value="${partner.coupon}">${partner.coupon} - ${partner.name}</option>`);
-                        $('#report-coupon').append(`<option value="${partner.coupon}">${partner.coupon} - ${partner.name}</option>`);
+                        // Adicionar às opções de parceiro
+                        $('#selected-partner').append(`<option value="${key}">${partner.name}</option>`);
+                        $('#report-partner').append(`<option value="${key}">${partner.name}</option>`);
                     });
                     
                     // Configurar eventos de exclusão
@@ -467,26 +491,28 @@
                         const contract = childSnapshot.val();
                         const key = childSnapshot.key;
                         
-                        // Primeiro, buscar informações do parceiro pelo cupom
-                        database.ref('partners').orderByChild('coupon').equalTo(contract.coupon).once('value')
+                        // Buscar informações do parceiro
+                        database.ref('partners/' + contract.partnerId).once('value')
                             .then(partnerSnapshot => {
+                                const partner = partnerSnapshot.val();
                                 let partnerName = 'Parceiro não encontrado';
-                                let commission = 'N/A';
+                                let commissionPercent = 0;
+                                let commissionValue = 0;
                                 
-                                partnerSnapshot.forEach(partnerChild => {
-                                    const partner = partnerChild.val();
+                                if (partner) {
                                     partnerName = partner.name;
-                                    commission = 'R$' + parseFloat(partner.commission).toFixed(2).replace('.', ',');
-                                });
+                                    commissionPercent = parseFloat(partner.commissionPercent);
+                                    commissionValue = (parseFloat(contract.monthlyValue) * commissionPercent / 100).toFixed(2);
+                                }
                                 
                                 // Adicionar à tabela de contratos
                                 $('#contracts-list').append(`
                                     <tr>
                                         <td>${contract.contractNumber}</td>
-                                        <td>${contract.coupon}</td>
                                         <td>${partnerName}</td>
+                                        <td>R$${parseFloat(contract.monthlyValue).toFixed(2).replace('.', ',')}</td>
+                                        <td>R$${commissionValue.replace('.', ',')} (${commissionPercent}%)</td>
                                         <td>${formatDate(contract.validationDate)}</td>
-                                        <td>${commission}</td>
                                         <td>${contract.registeredBy}</td>
                                         <td>
                                             <button class="btn btn-sm btn-danger delete-contract" data-key="${key}">
@@ -511,9 +537,13 @@
 
         // Gerar relatório
         function generateReport() {
-            const couponFilter = $('#report-coupon').val();
+            const partnerFilter = $('#report-partner').val();
             const startDate = $('#start-date').val();
             const endDate = $('#end-date').val();
+            
+            // Ajustar datas para o fuso horário do Brasil (UTC-3)
+            let startDateObj = startDate ? new Date(startDate + 'T00:00:00-03:00') : null;
+            let endDateObj = endDate ? new Date(endDate + 'T23:59:59-03:00') : null;
             
             database.ref('contracts').once('value')
                 .then(snapshot => {
@@ -525,44 +555,54 @@
                     
                     snapshot.forEach(childSnapshot => {
                         const contract = childSnapshot.val();
-                        
-                        // Aplicar filtros
-                        if (couponFilter && contract.coupon !== couponFilter) return;
-                        if (startDate && contract.validationDate < startDate) return;
-                        if (endDate && contract.validationDate > endDate) return;
+                        const contractKey = childSnapshot.key;
                         
                         // Buscar informações do parceiro
-                        const promise = database.ref('partners').orderByChild('coupon').equalTo(contract.coupon).once('value')
+                        const promise = database.ref('partners/' + contract.partnerId).once('value')
                             .then(partnerSnapshot => {
+                                const partner = partnerSnapshot.val();
+                                
+                                // Aplicar filtros
+                                if (partnerFilter && contract.partnerId !== partnerFilter) return;
+                                
+                                // Converter data para objeto Date com fuso horário do Brasil
+                                const contractDate = new Date(contract.validationDate + 'T00:00:00-03:00');
+                                
+                                if (startDateObj && contractDate < startDateObj) return;
+                                if (endDateObj && contractDate > endDateObj) return;
+                                
                                 let partnerName = 'Parceiro não encontrado';
-                                let commission = 0;
+                                let commissionPercent = 0;
+                                let commissionValue = 0;
                                 
-                                partnerSnapshot.forEach(partnerChild => {
-                                    const partner = partnerChild.val();
+                                if (partner) {
                                     partnerName = partner.name;
-                                    commission = parseFloat(partner.commission);
-                                });
+                                    commissionPercent = parseFloat(partner.commissionPercent);
+                                    commissionValue = parseFloat(contract.monthlyValue) * commissionPercent / 100;
+                                }
                                 
-                                totalCommission += commission;
+                                totalCommission += commissionValue;
                                 
                                 // Adicionar aos resultados
                                 $('#report-results').append(`
                                     <tr>
                                         <td>${partnerName}</td>
-                                        <td>${contract.coupon}</td>
                                         <td>${contract.contractNumber}</td>
+                                        <td>R$${parseFloat(contract.monthlyValue).toFixed(2).replace('.', ',')}</td>
+                                        <td>${commissionPercent}%</td>
+                                        <td>R$${commissionValue.toFixed(2).replace('.', ',')}</td>
                                         <td>${formatDate(contract.validationDate)}</td>
-                                        <td>R$${commission.toFixed(2).replace('.', ',')}</td>
                                     </tr>
                                 `);
                                 
                                 // Armazenar dados para exportação
                                 reportData.push({
-                                    Parceira: partnerName,
-                                    Cupom: contract.coupon,
+                                    Parceiro: partnerName,
                                     Contrato: contract.contractNumber,
-                                    Data: formatDate(contract.validationDate),
-                                    Comissão: 'R$' + commission.toFixed(2).replace('.', ',')
+                                    Mensalidade: 'R$' + parseFloat(contract.monthlyValue).toFixed(2).replace('.', ','),
+                                    'Comissão %': commissionPercent + '%',
+                                    Comissão: 'R$' + commissionValue.toFixed(2).replace('.', ','),
+                                    Data: formatDate(contract.validationDate)
                                 });
                             });
                         
@@ -578,7 +618,7 @@
                         lastTotalCommission = totalCommission;
                         
                         if ($('#report-results').children().length === 0) {
-                            $('#report-results').append('<tr><td colspan="5" class="text-center">Nenhum resultado encontrado com os filtros aplicados.</td></tr>');
+                            $('#report-results').append('<tr><td colspan="6" class="text-center">Nenhum resultado encontrado com os filtros aplicados.</td></tr>');
                             $('#total-commission').html('<strong>R$0,00</strong>');
                         }
                     });
@@ -590,11 +630,12 @@
             // Adicionar linha de total
             const dataToExport = [...lastReportData];
             dataToExport.push({
-                Parceira: '',
-                Cupom: '',
+                Parceiro: '',
                 Contrato: '',
-                Data: 'Total a Pagar:',
-                Comissão: 'R$' + lastTotalCommission.toFixed(2).replace('.', ',')
+                Mensalidade: '',
+                'Comissão %': 'Total a Pagar:',
+                Comissão: 'R$' + lastTotalCommission.toFixed(2).replace('.', ','),
+                Data: ''
             });
             
             // Criar planilha
@@ -602,11 +643,12 @@
             
             // Ajustar largura das colunas
             ws['!cols'] = [
-                { wch: 30 }, // Parceira
-                { wch: 15 }, // Cupom
+                { wch: 30 }, // Parceiro
                 { wch: 15 }, // Contrato
-                { wch: 12 }, // Data
-                { wch: 10 }  // Comissão
+                { wch: 15 }, // Mensalidade
+                { wch: 12 }, // Comissão %
+                { wch: 12 }, // Comissão
+                { wch: 12 }  // Data
             ];
             
             // Criar workbook
