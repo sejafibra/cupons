@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciamento de Comissões</title>
+    <title>Comissões Parcerias</title>
     <link rel="icon" href="https://raw.githubusercontent.com/sejafibra/cupons/refs/heads/main/faviconsf.ico" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
@@ -299,12 +299,22 @@
                     
                     // Verificar se é admin
                     const adminEmails = ['bioranss@gmail.com', 'paulo@sejafibra.com', 'financeiro@sejafibra.com'];
-                    const isSejaFibraNet = user.email.endsWith('@sejafibra.net');
-                    
-                    isAdmin = adminEmails.includes(user.email) || isSejaFibraNet;
+                    isAdmin = adminEmails.includes(user.email);
                     
                     if (isAdmin) {
                         $('body').addClass('is-admin');
+                        $('.admin-tab').show();
+                        $('#partners-tab').addClass('active');
+                        $('#partners').addClass('show active');
+                        $('#contracts-tab').removeClass('active');
+                        $('#contracts').removeClass('show active');
+                    } else {
+                        $('body').removeClass('is-admin');
+                        $('.admin-tab').hide();
+                        $('#contracts-tab').addClass('active');
+                        $('#contracts').addClass('show active');
+                        $('#partners-tab').removeClass('active');
+                        $('#partners').removeClass('show active');
                     }
                     
                     $('#auth-container').hide();
@@ -345,7 +355,7 @@
                 e.preventDefault();
                 
                 if (!isAdmin) {
-                    alert('Apenas administradores podem cadastrar parceiros.');
+                    alert('Você não tem acesso a esta funcionalidade.');
                     return;
                 }
                 
@@ -419,7 +429,7 @@
             $('#confirm-delete').click(function() {
                 if (deleteType === 'partner') {
                     if (!isAdmin) {
-                        alert('Apenas administradores podem excluir parceiros.');
+                        alert('Você não tem acesso a esta funcionalidade.');
                         $('#confirm-modal').modal('hide');
                         return;
                     }
@@ -435,6 +445,20 @@
                             $('#confirm-modal').modal('hide');
                             loadContracts();
                         });
+                }
+            });
+
+            // Controle de acesso às abas
+            $('#myTab button').on('click', function(e) {
+                const target = $(this).data('bsTarget');
+                
+                if (target === '#partners' && !isAdmin) {
+                    e.preventDefault();
+                    alert('Você não tem acesso à aba de Parceiros.');
+                    $(this).removeClass('active');
+                    $('#contracts-tab').addClass('active');
+                    $('#contracts').addClass('show active');
+                    return false;
                 }
             });
         });
@@ -472,6 +496,11 @@
                     
                     // Configurar eventos de exclusão
                     $('.delete-partner').click(function() {
+                        if (!isAdmin) {
+                            alert('Você não tem acesso a esta funcionalidade.');
+                            return;
+                        }
+                        
                         itemToDelete = $(this).data('key');
                         deleteType = 'partner';
                         $('#confirm-modal-title').text('Excluir Parceiro');
