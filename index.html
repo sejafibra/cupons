@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Comissões Parcerias</title>
     <link rel="icon" href="https://raw.githubusercontent.com/sejafibra/cupons/refs/heads/main/faviconsf.ico" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -14,7 +14,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <style>
         .auth-container {
-            max-width: 400px;
+            max-width: 420px;
             margin: 0 auto;
             padding-top: 50px;
         }
@@ -44,6 +44,20 @@
         }
         .is-admin .admin-tab {
             display: list-item;
+        }
+        /* Melhor alinhamento para campos de valor */
+        .input-group .form-control[type="number"]::-webkit-outer-spin-button,
+        .input-group .form-control[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .money-col {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .small-muted {
+            font-size: 0.9rem;
+            color: #6c757d;
         }
     </style>
 </head>
@@ -96,7 +110,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="commission-percent" class="form-label">% Comissão</label>
-                            <input type="number" class="form-control" id="commission-percent" min="1" max="100" required>
+                            <input type="number" class="form-control" id="commission-percent" min="0" max="100" required>
                         </div>
                         <div class="col-md-6">
                             <label for="registration-date" class="form-label">Data de Cadastro</label>
@@ -131,26 +145,41 @@
                 <h4>Registrar Contrato</h4>
                 <form id="contract-form" class="mb-4">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="contract-number" class="form-label">Número do Contrato</label>
                             <input type="text" class="form-control" id="contract-number" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="selected-partner" class="form-label">Parceiro</label>
                             <select class="form-select" id="selected-partner" required>
                                 <option value="">Selecione um parceiro</option>
                                 <!-- Opções serão preenchidas via JavaScript -->
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label for="monthly-value" class="form-label">R$ Adesão + Mensalidade</label>
-                            <input type="number" class="form-control" id="monthly-value" step="0.01" min="0" required>
+
+                        <!-- Novos campos: Adesão e Mensalidade -->
+                        <div class="col-md-2">
+                            <label class="form-label">Valor da Adesão (R$)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" class="form-control" id="adhesion-value" step="0.01" min="0" value="0.00" aria-label="Valor da Adesão">
+                            </div>
+                            <div class="small-muted">Opcional</div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-2">
+                            <label class="form-label">Valor Mensalidade (R$)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" class="form-control" id="monthly-value" step="0.01" min="0" value="0.00" aria-label="Valor Mensalidade">
+                            </div>
+                            <div class="small-muted">Opcional</div>
+                        </div>
+
+                        <div class="col-md-4">
                             <label for="validation-date" class="form-label">Data de Validação</label>
                             <input type="date" class="form-control" id="validation-date" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="registered-by" class="form-label">Registrado por</label>
                             <input type="text" class="form-control" id="registered-by" readonly>
                         </div>
@@ -167,8 +196,9 @@
                             <tr>
                                 <th>Contrato</th>
                                 <th>Parceiro</th>
-                                <th>Adesão + Mensalidade</th>
-                                <th>Comissão</th>
+                                <th class="money-col">Adesão</th>
+                                <th class="money-col">Mensalidade</th>
+                                <th class="money-col">Comissão</th>
                                 <th>Data</th>
                                 <th>Registrado por</th>
                                 <th>Ações</th>
@@ -215,9 +245,10 @@
                             <tr>
                                 <th>Parceiro</th>
                                 <th>Contrato</th>
-                                <th>Adesão + Mensalidade</th>
-                                <th>% Comissão</th>
-                                <th>Comissão</th>
+                                <th class="money-col">Adesão</th>
+                                <th class="money-col">Mensalidade</th>
+                                <th class="money-col">% Comissão</th>
+                                <th class="money-col">Comissão</th>
                                 <th>Data</th>
                             </tr>
                         </thead>
@@ -226,7 +257,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="total-row">
-                                <td colspan="4" class="text-end"><strong>Total a Pagar:</strong></td>
+                                <td colspan="5" class="text-end"><strong>Total a Pagar:</strong></td>
                                 <td colspan="2" id="total-commission"><strong>R$0,00</strong></td>
                             </tr>
                         </tfoot>
@@ -255,10 +286,12 @@
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
     <script>
         // Inicialização do Firebase
         const firebaseConfig = {
@@ -271,12 +304,11 @@
             databaseURL: "https://cupons-5b5fd-default-rtdb.firebaseio.com/"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const database = firebase.database();
 
-        // Variáveis globais
+        // Globais
         let currentUser = null;
         let isAdmin = false;
         let itemToDelete = null;
@@ -284,20 +316,37 @@
         let lastReportData = null;
         let lastTotalCommission = 0;
 
-        // Inicialização quando o DOM estiver pronto
+        // Utilitários
+        function safeParseFloat(val) {
+            const v = parseFloat(val);
+            return (isNaN(v) ? 0 : v);
+        }
+
+        function formatCurrencyBR(value) {
+            const v = safeParseFloat(value);
+            return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            if (dateString.includes('/')) return dateString;
+            if (dateString.includes('-')) {
+                const parts = dateString.split('-');
+                if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateString;
+        }
+
         $(document).ready(function() {
-            // Configurar data atual como padrão nos campos de data
             const today = new Date().toISOString().split('T')[0];
             $('#registration-date').val(today);
             $('#validation-date').val(today);
+            $('#adhesion-value').val('0.00');
+            $('#monthly-value').val('0.00');
 
-            // Verificar estado de autenticação
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    // Usuário autenticado
                     currentUser = user;
-                    
-                    // Verificar se é admin
                     const adminEmails = ['bioranss@gmail.com', 'paulo@sejafibra.net', 'financeiro@sejafibra.net'];
                     isAdmin = adminEmails.includes(user.email);
                     
@@ -316,15 +365,15 @@
                         $('#partners-tab').removeClass('active');
                         $('#partners').removeClass('show active');
                     }
-                    
+
                     $('#auth-container').hide();
                     $('#app-container').show();
                     $('#registered-by').val(user.email);
+
                     loadPartners();
                     loadContracts();
                     initDataTables();
                 } else {
-                    // Usuário não autenticado
                     $('#auth-container').show();
                     $('#app-container').hide();
                 }
@@ -335,86 +384,71 @@
                 e.preventDefault();
                 const email = $('#email').val();
                 const password = $('#password').val();
-                
                 auth.signInWithEmailAndPassword(email, password)
-                    .then(() => {
-                        $('#login-message').text('');
-                    })
-                    .catch(error => {
-                        $('#login-message').text('Erro no login: ' + error.message);
-                    });
+                    .then(() => { $('#login-message').text(''); })
+                    .catch(error => { $('#login-message').text('Erro no login: ' + error.message); });
             });
 
             // Logout
-            $('#logout-btn').click(function() {
-                auth.signOut();
-            });
+            $('#logout-btn').click(function() { auth.signOut(); });
 
             // Cadastrar Parceiro
             $('#partner-form').submit(function(e) {
                 e.preventDefault();
-                
-                if (!isAdmin) {
-                    alert('Você não tem acesso a esta funcionalidade.');
-                    return;
-                }
-                
-                // Ajustar a data para o formato YYYY-MM-DD (sem fuso horário)
+                if (!isAdmin) { alert('Você não tem acesso a esta funcionalidade.'); return; }
                 const registrationDate = $('#registration-date').val();
-                
                 const partnerData = {
                     name: $('#partner-name').val(),
                     commissionPercent: $('#commission-percent').val(),
-                    date: registrationDate, // Já está no formato YYYY-MM-DD
+                    date: registrationDate,
                     createdBy: currentUser.email,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 };
-                
                 database.ref('partners').push(partnerData)
                     .then(() => {
                         alert('Parceiro cadastrado com sucesso!');
                         $('#partner-form')[0].reset();
-                        $('#registration-date').val(today); // Reset para data atual
+                        $('#registration-date').val(today);
                         loadPartners();
                     })
-                    .catch(error => {
-                        alert('Erro ao cadastrar: ' + error.message);
-                    });
+                    .catch(error => alert('Erro ao cadastrar: ' + error.message));
             });
 
-            // Registrar Contrato
+            // Registrar Contrato (novo formato com adhesionValue e monthlyValue)
             $('#contract-form').submit(function(e) {
                 e.preventDefault();
-                
-                // Ajustar a data para o formato YYYY-MM-DD (sem fuso horário)
+
                 const validationDate = $('#validation-date').val();
-                
+                const contractNumber = $('#contract-number').val();
+                const partnerId = $('#selected-partner').val();
+                // não obrigatório - default 0
+                const adhesionValue = safeParseFloat($('#adhesion-value').val());
+                const monthlyValue = safeParseFloat($('#monthly-value').val());
+
                 const contractData = {
-                    contractNumber: $('#contract-number').val(),
-                    partnerId: $('#selected-partner').val(),
-                    monthlyValue: $('#monthly-value').val(),
-                    validationDate: validationDate, // Já está no formato YYYY-MM-DD
+                    contractNumber: contractNumber,
+                    partnerId: partnerId,
+                    adhesionValue: adhesionValue,   // novo campo
+                    monthlyValue: monthlyValue,     // novo campo
+                    validationDate: validationDate,
                     registeredBy: currentUser.email,
                     registeredAt: firebase.database.ServerValue.TIMESTAMP
                 };
-                
+
                 database.ref('contracts').push(contractData)
                     .then(() => {
                         alert('Contrato registrado com sucesso!');
                         $('#contract-form')[0].reset();
-                        $('#validation-date').val(today); // Reset para data atual
+                        $('#validation-date').val(today);
+                        $('#adhesion-value').val('0.00');
+                        $('#monthly-value').val('0.00');
                         loadContracts();
                     })
-                    .catch(error => {
-                        alert('Erro ao registrar: ' + error.message);
-                    });
+                    .catch(error => alert('Erro ao registrar: ' + error.message));
             });
 
-            // Gerar Relatório
-            $('#report-form').submit(function(e) {
-                e.preventDefault();
-                generateReport();
-            });
+            // Gerar relatório
+            $('#report-form').submit(function(e) { e.preventDefault(); generateReport(); });
 
             // Exportar Excel
             $('#export-excel').click(function() {
@@ -428,30 +462,16 @@
             // Confirmar exclusão
             $('#confirm-delete').click(function() {
                 if (deleteType === 'partner') {
-                    if (!isAdmin) {
-                        alert('Você não tem acesso a esta funcionalidade.');
-                        $('#confirm-modal').modal('hide');
-                        return;
-                    }
-                    
-                    database.ref('partners/' + itemToDelete).remove()
-                        .then(() => {
-                            $('#confirm-modal').modal('hide');
-                            loadPartners();
-                        });
+                    if (!isAdmin) { alert('Você não tem acesso a esta funcionalidade.'); $('#confirm-modal').modal('hide'); return; }
+                    database.ref('partners/' + itemToDelete).remove().then(() => { $('#confirm-modal').modal('hide'); loadPartners(); });
                 } else if (deleteType === 'contract') {
-                    database.ref('contracts/' + itemToDelete).remove()
-                        .then(() => {
-                            $('#confirm-modal').modal('hide');
-                            loadContracts();
-                        });
+                    database.ref('contracts/' + itemToDelete).remove().then(() => { $('#confirm-modal').modal('hide'); loadContracts(); });
                 }
             });
 
             // Controle de acesso às abas
             $('#myTab button').on('click', function(e) {
                 const target = $(this).data('bsTarget');
-                
                 if (target === '#partners' && !isAdmin) {
                     e.preventDefault();
                     alert('Você não tem acesso à aba de Parceiros.');
@@ -461,275 +481,243 @@
                     return false;
                 }
             });
+
+            // Pequeno ajuste: formatar campos de valor ao perder foco
+            $('#adhesion-value, #monthly-value').on('blur', function() {
+                const v = safeParseFloat($(this).val());
+                $(this).val(v.toFixed(2));
+            });
         });
 
         // Carregar parceiros
         function loadPartners() {
-            database.ref('partners').once('value')
-                .then(snapshot => {
-                    $('#partners-list').empty();
-                    $('#selected-partner').empty().append('<option value="">Selecione um parceiro</option>');
-                    $('#report-partner').empty().append('<option value="">Todos os parceiros</option>');
-                    
-                    snapshot.forEach(childSnapshot => {
-                        const partner = childSnapshot.val();
-                        const key = childSnapshot.key;
-                        
-                        // Adicionar à tabela de parceiros
-                        $('#partners-list').append(`
+            database.ref('partners').once('value').then(snapshot => {
+                $('#partners-list').empty();
+                $('#selected-partner').empty().append('<option value="">Selecione um parceiro</option>');
+                $('#report-partner').empty().append('<option value="">Todos os parceiros</option>');
+
+                snapshot.forEach(childSnapshot => {
+                    const partner = childSnapshot.val();
+                    const key = childSnapshot.key;
+
+                    $('#partners-list').append(`
+                        <tr>
+                            <td>${partner.name}</td>
+                            <td>${partner.commissionPercent}%</td>
+                            <td>${formatDate(partner.date)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger delete-partner" data-key="${key}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+
+                    $('#selected-partner').append(`<option value="${key}">${partner.name}</option>`);
+                    $('#report-partner').append(`<option value="${key}">${partner.name}</option>`);
+                });
+
+                $('.delete-partner').click(function() {
+                    if (!isAdmin) { alert('Você não tem acesso a esta funcionalidade.'); return; }
+                    itemToDelete = $(this).data('key');
+                    deleteType = 'partner';
+                    $('#confirm-modal-title').text('Excluir Parceiro');
+                    $('#confirm-modal-body').html('Tem certeza que deseja excluir este parceiro?<br><strong>Esta ação não pode ser desfeita.</strong>');
+                    $('#confirm-modal').modal('show');
+                });
+            });
+        }
+
+        // Carregar contratos (lendo adhesionValue e monthlyValue)
+        function loadContracts() {
+            database.ref('contracts').once('value').then(snapshot => {
+                $('#contracts-list').empty();
+
+                snapshot.forEach(childSnapshot => {
+                    const contract = childSnapshot.val();
+                    const key = childSnapshot.key;
+
+                    database.ref('partners/' + contract.partnerId).once('value').then(partnerSnapshot => {
+                        const partner = partnerSnapshot.val();
+                        let partnerName = 'Parceiro não encontrado';
+                        let commissionPercent = 0;
+
+                        if (partner) {
+                            partnerName = partner.name;
+                            commissionPercent = safeParseFloat(partner.commissionPercent);
+                        }
+
+                        // Ler os novos campos (se não existirem, considera 0)
+                        const adhesionValue = safeParseFloat(contract.adhesionValue);
+                        const monthlyValue = safeParseFloat(contract.monthlyValue);
+                        const totalForCommission = adhesionValue + monthlyValue;
+                        const commissionValue = (totalForCommission * commissionPercent / 100);
+
+                        $('#contracts-list').append(`
                             <tr>
-                                <td>${partner.name}</td>
-                                <td>${partner.commissionPercent}%</td>
-                                <td>${formatDate(partner.date)}</td>
+                                <td>${contract.contractNumber}</td>
+                                <td>${partnerName}</td>
+                                <td class="money-col">R$ ${formatCurrencyBR(adhesionValue)}</td>
+                                <td class="money-col">R$ ${formatCurrencyBR(monthlyValue)}</td>
+                                <td class="money-col">R$ ${formatCurrencyBR(commissionValue)} (${commissionPercent}%)</td>
+                                <td>${formatDate(contract.validationDate)}</td>
+                                <td>${contract.registeredBy}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-danger delete-partner" data-key="${key}">
+                                    <button class="btn btn-sm btn-danger delete-contract" data-key="${key}">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </td>
                             </tr>
                         `);
-                        
-                        // Adicionar às opções de parceiro
-                        $('#selected-partner').append(`<option value="${key}">${partner.name}</option>`);
-                        $('#report-partner').append(`<option value="${key}">${partner.name}</option>`);
-                    });
-                    
-                    // Configurar eventos de exclusão
-                    $('.delete-partner').click(function() {
-                        if (!isAdmin) {
-                            alert('Você não tem acesso a esta funcionalidade.');
-                            return;
-                        }
-                        
-                        itemToDelete = $(this).data('key');
-                        deleteType = 'partner';
-                        $('#confirm-modal-title').text('Excluir Parceiro');
-                        $('#confirm-modal-body').html('Tem certeza que deseja excluir este parceiro?<br><strong>Esta ação não pode ser desfeita.</strong>');
-                        $('#confirm-modal').modal('show');
+
+                        $('.delete-contract').click(function() {
+                            itemToDelete = $(this).data('key');
+                            deleteType = 'contract';
+                            $('#confirm-modal-title').text('Excluir Registro de Contrato');
+                            $('#confirm-modal-body').html('Tem certeza que deseja excluir este registro de contrato?<br><strong>Esta ação não pode ser desfeita.</strong>');
+                            $('#confirm-modal').modal('show');
+                        });
                     });
                 });
+            });
         }
 
-        // Carregar contratos
-        function loadContracts() {
-            database.ref('contracts').once('value')
-                .then(snapshot => {
-                    $('#contracts-list').empty();
-                    
-                    snapshot.forEach(childSnapshot => {
-                        const contract = childSnapshot.val();
-                        const key = childSnapshot.key;
-                        
-                        // Buscar informações do parceiro
-                        database.ref('partners/' + contract.partnerId).once('value')
-                            .then(partnerSnapshot => {
-                                const partner = partnerSnapshot.val();
-                                let partnerName = 'Parceiro não encontrado';
-                                let commissionPercent = 0;
-                                let commissionValue = 0;
-                                
-                                if (partner) {
-                                    partnerName = partner.name;
-                                    commissionPercent = parseFloat(partner.commissionPercent);
-                                    commissionValue = (parseFloat(contract.monthlyValue) * commissionPercent / 100).toFixed(2);
-                                }
-                                
-                                // Adicionar à tabela de contratos
-                                $('#contracts-list').append(`
-                                    <tr>
-                                        <td>${contract.contractNumber}</td>
-                                        <td>${partnerName}</td>
-                                        <td>R$${parseFloat(contract.monthlyValue).toFixed(2).replace('.', ',')}</td>
-                                        <td>R$${commissionValue.replace('.', ',')} (${commissionPercent}%)</td>
-                                        <td>${formatDate(contract.validationDate)}</td>
-                                        <td>${contract.registeredBy}</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-danger delete-contract" data-key="${key}">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `);
-                                
-                                // Configurar eventos de exclusão
-                                $('.delete-contract').click(function() {
-                                    itemToDelete = $(this).data('key');
-                                    deleteType = 'contract';
-                                    $('#confirm-modal-title').text('Excluir Registro de Contrato');
-                                    $('#confirm-modal-body').html('Tem certeza que deseja excluir este registro de contrato?<br><strong>Esta ação não pode ser desfeita.</strong>');
-                                    $('#confirm-modal').modal('show');
-                                });
-                            });
-                    });
-                });
-        }
-
-        // Gerar relatório
+        // Gerar relatório (mostrando adesão e mensalidade separadas)
         function generateReport() {
             const partnerFilter = $('#report-partner').val();
             const startDate = $('#start-date').val();
             const endDate = $('#end-date').val();
-            
-            // Ajustar datas para o fuso horário do Brasil (UTC-3)
+
             let startDateObj = startDate ? new Date(startDate + 'T00:00:00-03:00') : null;
             let endDateObj = endDate ? new Date(endDate + 'T23:59:59-03:00') : null;
-            
-            database.ref('contracts').once('value')
-                .then(snapshot => {
-                    $('#report-results').empty();
-                    let totalCommission = 0;
-                    let reportData = [];
-                    
-                    const promises = [];
-                    
-                    snapshot.forEach(childSnapshot => {
-                        const contract = childSnapshot.val();
-                        const contractKey = childSnapshot.key;
-                        
-                        // Buscar informações do parceiro
-                        const promise = database.ref('partners/' + contract.partnerId).once('value')
-                            .then(partnerSnapshot => {
-                                const partner = partnerSnapshot.val();
-                                
-                                // Aplicar filtros
-                                if (partnerFilter && contract.partnerId !== partnerFilter) return;
-                                
-                                // Converter data para objeto Date com fuso horário do Brasil
-                                const contractDate = new Date(contract.validationDate + 'T00:00:00-03:00');
-                                
-                                if (startDateObj && contractDate < startDateObj) return;
-                                if (endDateObj && contractDate > endDateObj) return;
-                                
-                                let partnerName = 'Parceiro não encontrado';
-                                let commissionPercent = 0;
-                                let commissionValue = 0;
-                                
-                                if (partner) {
-                                    partnerName = partner.name;
-                                    commissionPercent = parseFloat(partner.commissionPercent);
-                                    commissionValue = parseFloat(contract.monthlyValue) * commissionPercent / 100;
-                                }
-                                
-                                totalCommission += commissionValue;
-                                
-                                // Adicionar aos resultados
-                                $('#report-results').append(`
-                                    <tr>
-                                        <td>${partnerName}</td>
-                                        <td>${contract.contractNumber}</td>
-                                        <td>R$${parseFloat(contract.monthlyValue).toFixed(2).replace('.', ',')}</td>
-                                        <td>${commissionPercent}%</td>
-                                        <td>R$${commissionValue.toFixed(2).replace('.', ',')}</td>
-                                        <td>${formatDate(contract.validationDate)}</td>
-                                    </tr>
-                                `);
-                                
-                                // Armazenar dados para exportação
-                                reportData.push({
-                                    Parceiro: partnerName,
-                                    Contrato: contract.contractNumber,
-                                    Mensalidade: 'R$' + parseFloat(contract.monthlyValue).toFixed(2).replace('.', ','),
-                                    'Comissão %': commissionPercent + '%',
-                                    Comissão: 'R$' + commissionValue.toFixed(2).replace('.', ','),
-                                    Data: formatDate(contract.validationDate)
-                                });
-                            });
-                        
-                        promises.push(promise);
-                    });
-                    
-                    Promise.all(promises).then(() => {
-                        // Atualizar total
-                        $('#total-commission').html(`<strong>R$${totalCommission.toFixed(2).replace('.', ',')}</strong>`);
-                        
-                        // Armazenar dados para exportação
-                        lastReportData = reportData;
-                        lastTotalCommission = totalCommission;
-                        
-                        if ($('#report-results').children().length === 0) {
-                            $('#report-results').append('<tr><td colspan="6" class="text-center">Nenhum resultado encontrado com os filtros aplicados.</td></tr>');
-                            $('#total-commission').html('<strong>R$0,00</strong>');
+
+            database.ref('contracts').once('value').then(snapshot => {
+                $('#report-results').empty();
+                let totalCommission = 0;
+                let reportData = [];
+                const promises = [];
+
+                snapshot.forEach(childSnapshot => {
+                    const contract = childSnapshot.val();
+                    const contractKey = childSnapshot.key;
+
+                    const promise = database.ref('partners/' + contract.partnerId).once('value').then(partnerSnapshot => {
+                        const partner = partnerSnapshot.val();
+
+                        // aplicar filtro de parceiro
+                        if (partnerFilter && contract.partnerId !== partnerFilter) return;
+
+                        const contractDate = new Date(contract.validationDate + 'T00:00:00-03:00');
+                        if (startDateObj && contractDate < startDateObj) return;
+                        if (endDateObj && contractDate > endDateObj) return;
+
+                        let partnerName = 'Parceiro não encontrado';
+                        let commissionPercent = 0;
+                        if (partner) {
+                            partnerName = partner.name;
+                            commissionPercent = safeParseFloat(partner.commissionPercent);
                         }
+
+                        const adhesionValue = safeParseFloat(contract.adhesionValue);
+                        const monthlyValue = safeParseFloat(contract.monthlyValue);
+                        const commissionValue = (adhesionValue + monthlyValue) * commissionPercent / 100;
+
+                        totalCommission += commissionValue;
+
+                        $('#report-results').append(`
+                            <tr>
+                                <td>${partnerName}</td>
+                                <td>${contract.contractNumber}</td>
+                                <td class="money-col">R$ ${formatCurrencyBR(adhesionValue)}</td>
+                                <td class="money-col">R$ ${formatCurrencyBR(monthlyValue)}</td>
+                                <td class="money-col">${commissionPercent}%</td>
+                                <td class="money-col">R$ ${formatCurrencyBR(commissionValue)}</td>
+                                <td>${formatDate(contract.validationDate)}</td>
+                            </tr>
+                        `);
+
+                        reportData.push({
+                            Parceiro: partnerName,
+                            Contrato: contract.contractNumber,
+                            Adesao: 'R$' + formatCurrencyBR(adhesionValue),
+                            Mensalidade: 'R$' + formatCurrencyBR(monthlyValue),
+                            'Comissão %': commissionPercent + '%',
+                            Comissão: 'R$' + formatCurrencyBR(commissionValue),
+                            Data: formatDate(contract.validationDate)
+                        });
                     });
+
+                    promises.push(promise);
                 });
+
+                Promise.all(promises).then(() => {
+                    $('#total-commission').html(`<strong>R$${formatCurrencyBR(totalCommission)}</strong>`);
+                    lastReportData = reportData;
+                    lastTotalCommission = totalCommission;
+
+                    if ($('#report-results').children().length === 0) {
+                        $('#report-results').append('<tr><td colspan="7" class="text-center">Nenhum resultado encontrado com os filtros aplicados.</td></tr>');
+                        $('#total-commission').html('<strong>R$0,00</strong>');
+                    }
+                });
+            });
         }
 
-        // Exportar para Excel
+        // Exportar para Excel (com colunas Adesão e Mensalidade separadas)
         function exportToExcel() {
-            // Adicionar linha de total
             const dataToExport = [...lastReportData];
+            // linha de total
             dataToExport.push({
                 Parceiro: '',
                 Contrato: '',
-               'Adesão + Mensalidade': '',
+                Adesao: '',
+                Mensalidade: '',
                 'Comissão %': 'Total a Pagar:',
-                Comissão: 'R$' + lastTotalCommission.toFixed(2).replace('.', ','),
+                Comissão: 'R$' + formatCurrencyBR(lastTotalCommission),
                 Data: ''
             });
-            
-            // Criar planilha
+
             const ws = XLSX.utils.json_to_sheet(dataToExport);
-            
-            // Ajustar largura das colunas
             ws['!cols'] = [
                 { wch: 30 }, // Parceiro
                 { wch: 15 }, // Contrato
-                { wch: 15 }, // Adesão + Mensalidade
+                { wch: 15 }, // Adesao
+                { wch: 15 }, // Mensalidade
                 { wch: 12 }, // Comissão %
-                { wch: 12 }, // Comissão
+                { wch: 15 }, // Comissão
                 { wch: 12 }  // Data
             ];
-            
-            // Criar workbook
+
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Relatório");
-            
-            // Exportar
+
             XLSX.writeFile(wb, `Relatorio_Comissoes_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
         // Inicializar DataTables
         function initDataTables() {
-            $('#partners-table').DataTable({
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
-                }
-            });
-            
-            $('#contracts-table').DataTable({
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
-                }
-            });
-            
-            $('#report-table').DataTable({
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
-                },
-                searching: false,
-                paging: false,
-                info: false
-            });
-        }
+            // wait a bit to avoid double-initialization if called multiple times
+            setTimeout(() => {
+                if ($.fn.dataTable.isDataTable('#partners-table')) { $('#partners-table').DataTable().destroy(); }
+                if ($.fn.dataTable.isDataTable('#contracts-table')) { $('#contracts-table').DataTable().destroy(); }
+                if ($.fn.dataTable.isDataTable('#report-table')) { $('#report-table').DataTable().destroy(); }
 
-        // Formatar data para exibição (DD/MM/YYYY)
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            
-            // Se já estiver no formato DD/MM/YYYY (contém /)
-            if (dateString.includes('/')) {
-                return dateString;
-            }
-            
-            // Se estiver no formato YYYY-MM-DD
-            if (dateString.includes('-')) {
-                const parts = dateString.split('-');
-                if (parts.length === 3) {
-                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                }
-            }
-            
-            return dateString;
+                $('#partners-table').DataTable({
+                    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' }
+                });
+
+                $('#contracts-table').DataTable({
+                    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
+                    order: []
+                });
+
+                $('#report-table').DataTable({
+                    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
+                    searching: false,
+                    paging: false,
+                    info: false
+                });
+            }, 250);
         }
     </script>
 </body>
